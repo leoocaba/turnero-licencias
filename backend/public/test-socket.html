@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Test Socket Turnero</title></head>
+<body>
+  <h2>Test Socket Turnero</h2>
+  <div>
+    <input id="num" placeholder="A001">
+    <input id="box" placeholder="1" type="number">
+    <button id="send">Enviar nuevo turno (via socket)</button>
+  </div>
+  <pre id="log"></pre>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    socket.on("connect", ()=> log('connected: '+socket.id));
+    socket.on("turno_actualizado", d => log('evento turno_actualizado: ' + JSON.stringify(d)));
+    socket.on("pong", d => log('pong: '+ JSON.stringify(d)));
+
+    document.getElementById('send').onclick = () => {
+      const numero = document.getElementById('num').value || 'A000';
+      const box = parseInt(document.getElementById('box').value || '1', 10);
+      socket.emit('admin:llamar', { numero, box });
+    };
+
+    function log(msg){ const p = document.getElementById('log'); p.innerText = msg + "\n\n" + p.innerText; }
+  </script>
+</body>
+</html>
