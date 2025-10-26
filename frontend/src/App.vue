@@ -1,6 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-100 p-6">
-    <h1 class="text-2xl font-bold mb-4 text-center text-blue-700">🗓️ Turnero de Licencias</h1>
+    <h1 class="text-2xl font-bold mb-4 text-center text-blue-700">
+      🗓️ Turnero de Licencias
+    </h1>
 
     <div class="flex justify-center gap-4 mb-6">
       <button

@@ -1,10 +1,10 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import "./index.css";
-import { io } from "socket.io-client";
-
-const socket = io("http://localhost:4000");
+import socket from "./services/socket";
 
 const app = createApp(App);
+
+// Socket esté disponible globalmente
 app.provide("socket", socket);
+
 app.mount("#app");

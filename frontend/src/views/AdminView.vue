@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from "vue";
+import { ref, onMounted, onUnmounted, inject } from "vue";
 import api from "../services/api";
 
 const socket = inject("socket");
@@ -35,33 +35,56 @@ const turnos = ref([]);
 const numero = ref("");
 const box = ref("");
 
+// Carga inicial de turnos con manejo de errores
 onMounted(async () => {
-  const res = await api.get("/turnos");
-  turnos.value = res.data;
+  try {
+    const res = await api.get("/turnos");
+    turnos.value = res.data;
+  } catch (err) {
+    console.error("Error al cargar turnos:", err.message);
+  }
 
-  socket.on("turno_actualizado", (data) => {
-    if (data.action === "nuevo") {
-      turnos.value.unshift(data.turno);
-    } else if (data.action === "update") {
-      const idx = turnos.value.findIndex((t) => t._id === data.turno._id);
-      if (idx >= 0) turnos.value[idx] = data.turno;
-    }
-  });
+  if (socket) {
+    const handler = (data) => {
+      if (data.action === "nuevo") {
+        turnos.value.unshift(data.turno);
+      } else if (data.action === "update") {
+        const idx = turnos.value.findIndex((t) => t._id === data.turno._id);
+        if (idx >= 0) turnos.value[idx] = data.turno;
+      }
+    };
+    socket.on("turno_actualizado", handler);
+
+    // Limpieza al desmontar para evitar duplicados o errores
+    onUnmounted(() => {
+      socket.off("turno_actualizado", handler);
+    });
+  } else {
+    console.warn("⚠️ Socket no inyectado en AdminView");
+  }
 });
 
 async function crearTurno() {
-  const res = await api.post("/turnos", {
-    numero: numero.value,
-    box: parseInt(box.value),
-  });
-  numero.value = "";
-  box.value = "";
-  turnos.value.unshift(res.data);
+  try {
+    const res = await api.post("/turnos", {
+      numero: numero.value,
+      box: parseInt(box.value),
+    });
+    numero.value = "";
+    box.value = "";
+    turnos.value.unshift(res.data);
+  } catch (err) {
+    console.error("Error al crear turno:", err.message);
+  }
 }
 
 async function actualizarTurno(id, estado) {
-  const res = await api.put(`/turnos/${id}`, { estado });
-  const idx = turnos.value.findIndex((t) => t._id === id);
-  if (idx >= 0) turnos.value[idx] = res.data;
+  try {
+    const res = await api.put(`/turnos/${id}`, { estado });
+    const idx = turnos.value.findIndex((t) => t._id === id);
+    if (idx >= 0) turnos.value[idx] = res.data;
+  } catch (err) {
+    console.error("Error al actualizar turno:", err.message);
+  }
 }
 </script>
