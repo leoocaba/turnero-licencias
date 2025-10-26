@@ -1,10 +1,15 @@
+// models/Turno.js
 import mongoose from "mongoose";
 
 const turnoSchema = new mongoose.Schema({
   numero: { type: String, required: true },
-  box: { type: Number, required: false },
-  estado: { type: String, enum: ["esperando", "llamando", "atendido", "ausente"], default: "esperando" },
-  horaCreacion: { type: Date, default: Date.now }
+  box: { type: Number, default: null },
+  estado: { 
+    type: String, 
+    enum: ["pendiente", "llamando", "atendido", "perdido"], 
+    default: "pendiente" 
+  },
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model("Turno", turnoSchema);
