@@ -35,27 +35,25 @@ const turnos = ref([]);
 const numero = ref("");
 const box = ref("");
 
-// Carga inicial de turnos con manejo de errores
-onMounted(async () => {
-  try {
-    const res = await api.get("/turnos");
-    turnos.value = res.data;
-  } catch (err) {
-    console.error("Error al cargar turnos:", err.message);
-  }
+onMounted(() => {
+  cargarTurnos();
 
   if (socket) {
     const handler = (data) => {
       if (data.action === "nuevo") {
-        turnos.value.unshift(data.turno);
+        // Evitar duplicados: insertar solo si no existe el _id
+        if (!turnos.value.find((t) => t._id === data.turno._id)) {
+          turnos.value.unshift(data.turno);
+        }
       } else if (data.action === "update") {
         const idx = turnos.value.findIndex((t) => t._id === data.turno._id);
         if (idx >= 0) turnos.value[idx] = data.turno;
+        else turnos.value.unshift(data.turno);
       }
     };
+
     socket.on("turno_actualizado", handler);
 
-    // Limpieza al desmontar para evitar duplicados o errores
     onUnmounted(() => {
       socket.off("turno_actualizado", handler);
     });
@@ -64,20 +62,31 @@ onMounted(async () => {
   }
 });
 
+async function cargarTurnos() {
+  try {
+    const res = await api.get("/turnos");
+    turnos.value = res.data;
+  } catch (err) {
+    console.error("Error al cargar turnos:", err.message);
+  }
+}
+
 async function crearTurno() {
   try {
     const res = await api.post("/turnos", {
       numero: numero.value,
       box: parseInt(box.value),
     });
+    // No insertar localmente: el servidor emite y el handler lo añadirá.
     numero.value = "";
     box.value = "";
-    turnos.value.unshift(res.data);
+    // opcional: podrías mostrar un toast o feedback aquí
   } catch (err) {
     console.error("Error al crear turno:", err.message);
   }
 }
 
+// Añadí botones para cambiar estado rápidamente
 async function actualizarTurno(id, estado) {
   try {
     const res = await api.put(`/turnos/${id}`, { estado });

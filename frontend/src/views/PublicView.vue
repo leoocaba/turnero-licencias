@@ -21,23 +21,23 @@ import api from "../services/api";
 const socket = inject("socket");
 const turnos = ref([]);
 
-onMounted(async () => {
-  try {
-    const res = await api.get("/turnos");
-    turnos.value = res.data;
-  } catch (err) {
-    console.error("Error al cargar turnos públicos:", err.message);
-  }
+onMounted(() => {
+  cargarTurnos();
 
   if (socket) {
     const handler = (data) => {
       if (data.action === "nuevo") {
-        turnos.value.unshift(data.turno);
+        // evitar duplicados si el id ya existe
+        if (!turnos.value.find((t) => t._id === data.turno._id)) {
+          turnos.value.unshift(data.turno);
+        }
       } else if (data.action === "update") {
         const idx = turnos.value.findIndex((t) => t._id === data.turno._id);
         if (idx >= 0) turnos.value[idx] = data.turno;
+        else turnos.value.unshift(data.turno);
       }
     };
+
     socket.on("turno_actualizado", handler);
 
     onUnmounted(() => {
@@ -47,4 +47,13 @@ onMounted(async () => {
     console.warn("⚠️ Socket no inyectado en PublicView");
   }
 });
+
+async function cargarTurnos() {
+  try {
+    const res = await api.get("/turnos");
+    turnos.value = res.data;
+  } catch (err) {
+    console.error("Error al cargar turnos públicos:", err.message);
+  }
+}
 </script>
