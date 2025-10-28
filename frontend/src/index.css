@@ -36,6 +36,13 @@
 .btn-ghost { @apply bg-white border border-gray-200 text-gray-700 hover:bg-gray-50; }
 .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
 
+/* Definición de la clase personalizada *//* Definición de la clase personalizada */
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+  }
+}
+
 /* Animaciones y toasts (mantener lo ya agregado) */
 @keyframes toast-in {
   from { transform: translateX(18px) translateY(6px); opacity: 0; }
