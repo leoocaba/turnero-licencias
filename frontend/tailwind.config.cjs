@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {
@@ -19,9 +19,14 @@ export default {
         berissoBlue: { 500: "#0b63d6" },
         berissoGold: { 500: "#ffd400" },
       },
-      boxShadow: { card: "0 6px 18px rgba(15, 23, 42, 0.08)" },
-      screens: { xs: "420px" },
+      boxShadow: {
+        card: "0 6px 18px rgba(15, 23, 42, 0.08)",
+      },
+      screens: {
+        xs: "420px",
+      },
     },
   },
   plugins: [],
 };
+
