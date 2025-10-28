@@ -1,6 +1,86 @@
 /* index.css */
-body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  background-color: #f6f6f6;
+/* Tailwind base + componentes + utilidades */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Palette exacta tomada de berisso.gob.ar */
+:root {
+  --berisso-500: #3ec04a;
+  --berisso-700: #23772b;
+  --berisso-blue: #0b63d6;
+  --berisso-gold: #ffd400;
+  --bg-page: #ffffff;
+  --muted: #6b7280;
 }
+
+/* Logo circle helper usando variables */
+.logo-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, var(--berisso-500), var(--berisso-700));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+}
+
+/* Card, botones, toasts y responsividad (mantener lo ya agregado) */
+.card {
+  @apply bg-white rounded-lg p-4 shadow-card border border-gray-100;
+}
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition; }
+.btn-primary { background: linear-gradient(180deg, var(--berisso-500), var(--berisso-700)); color: white; }
+.btn-ghost { @apply bg-white border border-gray-200 text-gray-700 hover:bg-gray-50; }
+.btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
+
+/* Animaciones y toasts (mantener lo ya agregado) */
+@keyframes toast-in {
+  from { transform: translateX(18px) translateY(6px); opacity: 0; }
+  to   { transform: translateX(0) translateY(0); opacity: 1; }
+}
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(18px); opacity: 0; }
+}
+.animate-toast-in {
+  animation: toast-in 320ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+.animate-toast-out {
+  animation: toast-out 240ms cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* Toast base (Tailwind classes can't be used inside dynamic transitions easily) */
+.toast-base {
+  @apply max-w-xs w-full text-sm rounded-lg px-4 py-3 shadow-md flex items-start gap-3;
+}
+.toast-info { background: var(--berisso-blue); color: white; }
+.toast-success { background: var(--berisso-500); color: white; }
+.toast-error { background: #e3342f; color: white; }
+
+/* Responsive helpers for lists */
+.turnos-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .turnos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .turnos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Small utility tweaks */
+.kicker { @apply text-xs uppercase tracking-wider text-gray-500; }
+.h1 { @apply text-2xl font-semibold text-gray-900; }
+
+/* Estilos mínimos para toasts */
+.toast {
+  @apply max-w-xs text-sm rounded shadow-lg p-3 text-white;
+}
+.toast-info { @apply bg-blue-500; }
+.toast-success { @apply bg-green-500; }
+.toast-error { @apply bg-red-600; }
