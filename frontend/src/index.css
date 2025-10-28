@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fuente */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
 /* Palette exacta tomada de berisso.gob.ar */
 :root {
   --berisso-500: #3ec04a;
@@ -12,54 +15,83 @@
   --berisso-gold: #ffd400;
   --bg-page: #ffffff;
   --muted: #6b7280;
+  --card-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* Base y tipografía */
+html, body {
+  height: 100%;
+}
+body {
+  @apply bg-gray-50 text-gray-800 antialiased;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Logo circle helper usando variables */
 .logo-circle {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 9999px;
   background: linear-gradient(180deg, var(--berisso-500), var(--berisso-700));
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
 }
 
-/* Card, botones, toasts y responsividad (mantener lo ya agregado) */
+/* Card, botones, toasts y responsividad */
 .card {
-  @apply bg-white rounded-lg p-4 shadow-card border border-gray-100;
-}
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition; }
-.btn-primary { background: linear-gradient(180deg, var(--berisso-500), var(--berisso-700)); color: white; }
-.btn-ghost { @apply bg-white border border-gray-200 text-gray-700 hover:bg-gray-50; }
-.btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
-
-/* Definición de la clase personalizada *//* Definición de la clase personalizada */
-@layer utilities {
-  .shadow-card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
-  }
+  @apply bg-white rounded-xl p-5 border border-gray-100;
+  box-shadow: var(--card-shadow);
 }
 
-/* Animaciones y toasts (mantener lo ya agregado) */
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 font-medium transition-shadow transition-transform;
+  will-change: transform;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: linear-gradient(180deg, var(--berisso-500), var(--berisso-700));
+  color: white;
+  box-shadow: 0 6px 18px rgba(50, 115, 45, 0.14);
+}
+.btn-ghost {
+  @apply bg-white border border-gray-200 text-gray-700 hover:bg-gray-50;
+}
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+/* Grid responsive helpers */
+.turnos-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0,1fr));
+  gap: 1rem;
+}
+@media (min-width: 640px) { .turnos-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1024px) { .turnos-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+
+/* Tiny helpers */
+.kicker { @apply text-xs uppercase tracking-wider text-gray-500; }
+.h1 { @apply text-2xl font-semibold text-gray-900; }
+
+/* Toasts: animations + base */
 @keyframes toast-in {
-  from { transform: translateX(18px) translateY(6px); opacity: 0; }
-  to   { transform: translateX(0) translateY(0); opacity: 1; }
+  from { transform: translateY(-8px) scale(.98); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 @keyframes toast-out {
-  from { transform: translateX(0); opacity: 1; }
-  to   { transform: translateX(18px); opacity: 0; }
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(-8px) scale(.98); opacity: 0; }
 }
-.animate-toast-in {
-  animation: toast-in 320ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-.animate-toast-out {
-  animation: toast-out 240ms cubic-bezier(.4,0,.2,1) forwards;
-}
+.animate-toast-in { animation: toast-in 320ms cubic-bezier(.2,.8,.2,1) both; }
+.animate-toast-out { animation: toast-out 240ms cubic-bezier(.4,0,.2,1) both; }
 
-/* Toast base (Tailwind classes can't be used inside dynamic transitions easily) */
+/* Toast base */
 .toast-base {
   @apply max-w-xs w-full text-sm rounded-lg px-4 py-3 shadow-md flex items-start gap-3;
 }
@@ -67,27 +99,40 @@
 .toast-success { background: var(--berisso-500); color: white; }
 .toast-error { background: #e3342f; color: white; }
 
-/* Responsive helpers for lists */
-.turnos-grid {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
+/* Animaciones para tarjetas y número principal */
+@keyframes card-pop {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
-@media (min-width: 640px) {
-  .turnos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card-appear { animation: card-pop 280ms ease both; }
+
+@keyframes pulse-scale {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
-@media (min-width: 1024px) {
-  .turnos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pulse-number { animation: pulse-scale 420ms cubic-bezier(.2,.9,.3,1); }
+
+/* Número grande estilo */
+.big-number {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--berisso-blue);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+  line-height: 0.9;
 }
 
-/* Small utility tweaks */
-.kicker { @apply text-xs uppercase tracking-wider text-gray-500; }
-.h1 { @apply text-2xl font-semibold text-gray-900; }
-
-/* Estilos mínimos para toasts */
-.toast {
-  @apply max-w-xs text-sm rounded shadow-lg p-3 text-white;
+/* Estado badges */
+.badge {
+  @apply text-xs px-3 py-1 rounded-full font-medium inline-block;
 }
-.toast-info { @apply bg-blue-500; }
-.toast-success { @apply bg-green-500; }
-.toast-error { @apply bg-red-600; }
+.badge-llamando { @apply bg-amber-100 text-amber-800; }
+.badge-atendido { @apply bg-emerald-100 text-emerald-800; }
+.badge-perdido { @apply bg-red-100 text-red-800; }
+.badge-default { @apply bg-gray-100 text-gray-800; }
+
+/* Utilities layer: small helpers */
+@layer utilities {
+  .shadow-card { box-shadow: var(--card-shadow); }
+  .text-berisso { color: var(--berisso-500); }
+}

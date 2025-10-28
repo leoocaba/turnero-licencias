@@ -1,10 +1,9 @@
 <template>
   <div class="fixed top-4 right-4 z-50">
     <transition-group
-      name="toast"
-      tag="div"
       enter-active-class="animate-toast-in"
       leave-active-class="animate-toast-out"
+      tag="div"
       class="flex flex-col gap-3"
     >
       <div
@@ -15,15 +14,16 @@
       >
         <div class="flex-1">
           <div class="font-medium">{{ t.message }}</div>
+          <div v-if="t.detail" class="text-xs opacity-80 mt-1">{{ t.detail }}</div>
         </div>
-        <button @click="dismiss(t.id)" class="ml-2 text-sm opacity-80 hover:opacity-100">✕</button>
+        <button @click="dismiss(t.id)" class="ml-3 text-sm opacity-80 hover:opacity-100">✕</button>
       </div>
     </transition-group>
   </div>
 </template>
 
 <script setup>
-import toasts, { showToast } from "../services/toast";
+import toasts from "../services/toast";
 
 function toastTypeClass(type) {
   if (type === "success") return "toast-success";
@@ -38,5 +38,5 @@ function dismiss(id) {
 </script>
 
 <style scoped>
-/* estilo adicional ya en src/index.css */
+/* no adicional; estilos globales en index.css */
 </style>
