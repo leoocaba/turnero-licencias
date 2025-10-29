@@ -7,8 +7,8 @@
         <div class="text-xl font-semibold">Turnero de Licencias</div>
       </div>
       <div class="text-right">
-        <div class="text-xl">{{ fechaActual }}</div>
-        <div class="text-2xl font-bold">{{ horaActual }}</div>
+        <div class="text-sm capitalize">{{ fechaActual }}</div>
+        <div class="text-lg font-bold">{{ horaActual }}</div>
       </div>
     </header>
 
@@ -43,6 +43,7 @@
               <span class="text-xl font-bold">{{ turno.numero }}</span>
               <span class="text-berisso-green font-medium">Box {{ turno.box }}</span>
             </div>
+            <div v-if="ultimosAtendidos.length === 0" class="text-sm text-gray-500">No hay atendidos recientes.</div>
           </div>
         </div>
 
@@ -55,6 +56,7 @@
               <span class="text-xl font-bold">{{ turno.numero }}</span>
               <span class="text-red-500 font-medium">Box {{ turno.box }}</span>
             </div>
+            <div v-if="ultimosPerdidos.length === 0" class="text-sm text-gray-500">No hay perdidos recientes.</div>
           </div>
         </div>
       </div>
@@ -63,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, inject, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, inject, watch } from "vue";
 import api from "../services/api";
 import { showToast } from "../services/toast";
 
@@ -78,11 +80,11 @@ const turnoActivo = computed(() => {
   return turnos.value[0] || null;
 });
 
-const ultimosAtendidos = computed(() => 
+const ultimosAtendidos = computed(() =>
   turnos.value.filter(t => t.estado === "atendido").slice(0, 5)
 );
 
-const ultimosPerdidos = computed(() => 
+const ultimosPerdidos = computed(() =>
   turnos.value.filter(t => t.estado === "perdido").slice(0, 5)
 );
 
@@ -93,7 +95,7 @@ watch(() => turnoActivo.value, (newVal) => {
   setTimeout(() => (pulse.value = false), 420);
 });
 
-// Fecha y hora actual
+// Fecha y hora (fecha puede ser computed, hora es ref para actualizar)
 const fechaActual = computed(() => {
   return new Date().toLocaleDateString('es-AR', {
     weekday: 'long',
@@ -102,13 +104,7 @@ const fechaActual = computed(() => {
     day: 'numeric'
   });
 });
-
-const horaActual = computed(() => {
-  return new Date().toLocaleTimeString('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-});
+const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
 
 // Funciones de carga y manejo de datos
 async function cargarTurnos() {
@@ -139,6 +135,7 @@ function socketHandler(payload) {
 }
 
 // Lifecycle hooks
+let horaInterval = null;
 onMounted(() => {
   cargarTurnos();
 
@@ -148,19 +145,14 @@ onMounted(() => {
     showToast("Conexión en tiempo real no disponible", "error");
   }
 
-  // Actualizar hora cada minuto
-  const interval = setInterval(() => {
-    horaActual.value = new Date().toLocaleTimeString('es-AR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  horaInterval = setInterval(() => {
+    horaActual.value = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }, 60000);
+});
 
-  // Limpiar interval al desmontar
-  onUnmounted(() => {
-    clearInterval(interval);
-    if (socket) socket.off("turno_actualizado", socketHandler);
-  });
+onUnmounted(() => {
+  if (socket) socket.off("turno_actualizado", socketHandler);
+  if (horaInterval) clearInterval(horaInterval);
 });
 
 // Helpers de UI
