@@ -18,10 +18,10 @@
         <div class="card text-center">
           <h2 class="text-2xl text-berisso-blue mb-4">Turno Actual</h2>
           <div v-if="turnoActivo" class="space-y-4">
-            <div class="main-number">{{ turnoActivo.numero }}</div>
+            <div :class="['big-number', { 'pulse-number': pulse }]">{{ turnoActivo.numero }}</div>
             <div class="text-box font-bold text-berisso-blue">Box {{ turnoActivo.box }}</div>
             <div class="flex justify-center gap-4 items-center">
-              <span :class="['status-badge', `status-badge-${turnoActivo.estado}`]">
+              <span :class="['status-badge', estadoBadgeClass(turnoActivo.estado)]">
                 {{ estadoLabel(turnoActivo.estado) }}
               </span>
             </div>
@@ -71,64 +71,27 @@ const socket = inject("socket");
 const turnos = ref([]);
 const pulse = ref(false);
 
-async function cargarTurnos() {
-  try {
-    const res = await api.get("/turnos");
-    turnos.value = res.data || [];
-  } catch (err) {
-    showToast("No se pudieron cargar los turnos", "error");
-    console.error(err);
-  }
-}
-
-function socketHandler(payload) {
-  const data = payload || {};
-  const turno = data.turno || payload;
-  const action = data.action || (turno && turno._id ? "update" : "nuevo");
-  if (!turno) return;
-
-  if (action === "nuevo") {
-    if (!turnos.value.find((x) => x._id === turno._id)) turnos.value.unshift(turno);
-  } else {
-    const idx = turnos.value.findIndex((x) => x._id === turno._id);
-    if (idx >= 0) turnos.value.splice(idx, 1, turno);
-    else turnos.value.unshift(turno);
-  }
-}
-
-onMounted(() => {
-  cargarTurnos();
-
-  if (socket) {
-    socket.on("turno_actualizado", socketHandler);
-  } else {
-    showToast("Conexión en tiempo real no disponible", "error");
-  }
-
-  setInterval(() => {
-    horaActual.value = new Date().toLocaleTimeString('es-AR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }, 60000);
-});
-
-watch(turnoActivo, (newVal) => {
-  if (!newVal) return;
-  pulse.value = true;
-  setTimeout(() => (pulse.value = false), 420);
-});
-
-// Computed helpers
+// Computed properties
 const turnoActivo = computed(() => {
-  // Priorizar el último "llamando", sino el más reciente pendiente/atendido
   const llamando = turnos.value.find(t => t.estado === "llamando");
   if (llamando) return llamando;
   return turnos.value[0] || null;
 });
 
-const ultimosAtendidos = computed(() => turnos.value.filter(t => t.estado === "atendido").slice(0, 5));
-const ultimosPerdidos = computed(() => turnos.value.filter(t => t.estado === "perdido").slice(0, 5));
+const ultimosAtendidos = computed(() => 
+  turnos.value.filter(t => t.estado === "atendido").slice(0, 5)
+);
+
+const ultimosPerdidos = computed(() => 
+  turnos.value.filter(t => t.estado === "perdido").slice(0, 5)
+);
+
+// Watch para la animación de pulso (corregido)
+watch(() => turnoActivo.value, (newVal) => {
+  if (!newVal) return;
+  pulse.value = true;
+  setTimeout(() => (pulse.value = false), 420);
+});
 
 // Fecha y hora actual
 const fechaActual = computed(() => {
@@ -147,53 +110,132 @@ const horaActual = computed(() => {
   });
 });
 
-// UX helpers
+// Funciones de carga y manejo de datos
+async function cargarTurnos() {
+  try {
+    const res = await api.get("/turnos");
+    turnos.value = res.data || [];
+  } catch (err) {
+    showToast("No se pudieron cargar los turnos", "error");
+    console.error(err);
+  }
+}
+
+function socketHandler(payload) {
+  const data = payload || {};
+  const turno = data.turno || payload;
+  const action = data.action || (turno && turno._id ? "update" : "nuevo");
+  if (!turno) return;
+
+  if (action === "nuevo") {
+    if (!turnos.value.find((x) => x._id === turno._id)) {
+      turnos.value.unshift(turno);
+    }
+  } else {
+    const idx = turnos.value.findIndex((x) => x._id === turno._id);
+    if (idx >= 0) turnos.value.splice(idx, 1, turno);
+    else turnos.value.unshift(turno);
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  cargarTurnos();
+
+  if (socket) {
+    socket.on("turno_actualizado", socketHandler);
+  } else {
+    showToast("Conexión en tiempo real no disponible", "error");
+  }
+
+  // Actualizar hora cada minuto
+  const interval = setInterval(() => {
+    horaActual.value = new Date().toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, 60000);
+
+  // Limpiar interval al desmontar
+  onUnmounted(() => {
+    clearInterval(interval);
+    if (socket) socket.off("turno_actualizado", socketHandler);
+  });
+});
+
+// Helpers de UI
 function estadoLabel(e) {
   if (e === "llamando") return "Llamando";
   if (e === "atendido") return "Atendido";
   if (e === "perdido") return "Perdido";
   return e || "Pendiente";
 }
+
 function estadoBadgeClass(e) {
-  if (e === "llamando") return "badge-llamando";
-  if (e === "atendido") return "badge-atendido";
-  if (e === "perdido") return "badge-perdido";
-  return "badge-default";
+  if (e === "llamando") return "status-badge-llamando";
+  if (e === "atendido") return "status-badge-atendido";
+  if (e === "perdido") return "status-badge-perdido";
+  return "status-badge-default";
 }
+
 function formatoFecha(ts) {
   if (!ts) return "-";
   try {
     const d = new Date(ts);
     return d.toLocaleString();
-  } catch { return "-"; }
+  } catch { 
+    return "-"; 
+  }
 }
 </script>
 
 <style scoped>
 /* Ajustes para la tarjeta principal */
-.card { max-width: 900px; }
-.big-number { font-size: 4.5rem; }
+.card { 
+  max-width: 900px;
+  @apply bg-white rounded-xl shadow-lg p-8;
+}
+
+.big-number { 
+  font-size: 4.5rem;
+  @apply font-bold text-berisso-blue;
+}
+
 @media (min-width: 768px) {
-  .big-number { font-size: 6rem; }
+  .big-number {
+    font-size: 6rem;
+  }
 }
 
-/* Estilos generales */
-.header-container {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-bottom: 1px solid #e1e1e1;
+/* Animación de pulso */
+.pulse-number {
+  animation: pulse 420ms cubic-bezier(0.4, 0, 0.6, 1);
 }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Estilos de estado */
 .status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  @apply px-4 py-2 rounded-full font-medium;
 }
-.status-badge-llamando { background-color: #f59e0b; color: white; }
-.status-badge-atendido { background-color: #10b981; color: white; }
-.status-badge-perdido { background-color: #ef4444; color: white; }
 
-/* Colores personalizados */
-.text-berisso-blue { color: #1e3a8a; }
-.text-berisso-green { color: #065f46; }
+.status-badge-llamando { 
+  @apply bg-amber-500 text-white;
+}
+
+.status-badge-atendido { 
+  @apply bg-emerald-500 text-white;
+}
+
+.status-badge-perdido { 
+  @apply bg-red-500 text-white;
+}
+
+/* Header */
+.header-container {
+  @apply bg-berisso-blue text-white px-8 py-4 flex justify-between items-center;
+}
 </style>
