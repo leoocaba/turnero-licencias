@@ -110,11 +110,11 @@ const turnoActivo = computed(() => {
   return turnos.value[0] || null;
 });
 
-const ultimosAtendidos = computed(() => turnos.value.filter(t => t.estado === "atendido").slice(0,5));
-const ultimosPerdidos = computed(() => turnos.value.filter(t => t.estado === "perdido").slice(0,5));
+const ultimosAtendidos = computed(() => turnos.value.filter(t => t.estado === "atendido").slice(0, 5));
+const ultimosPerdidos = computed(() => turnos.value.filter(t => t.estado === "perdido").slice(0, 5));
 
 // Animación al cambiar el turno principal
-watch(turnoActivo, (newVal, oldVal) => {
+watch(turnoActivo, (newVal) => {
   if (!newVal) return;
   pulse.value = true;
   setTimeout(() => (pulse.value = false), 420);
