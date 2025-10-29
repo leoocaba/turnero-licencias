@@ -1,75 +1,70 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- Header -->
-    <header class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="kicker">Panel</div>
-        <h1 class="h1 text-3xl md:text-4xl">Gestión de turnos</h1>
-        <p class="text-sm text-gray-600 mt-1">Crea, llama y actualiza el estado de los turnos en tiempo real.</p>
+  <div class="min-h-screen flex flex-col">
+    <header class="header-container">
+      <div class="flex items-center gap-4">
+        <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
+        <div class="text-xl font-semibold">Panel de Administración</div>
       </div>
-
-      <form @submit.prevent="crearTurno" class="flex flex-col xs:flex-row gap-2 items-stretch xs:items-center">
-        <label class="sr-only" for="numero">Número</label>
-        <input id="numero" v-model="numero" required placeholder="Número (ej. A001)" class="px-3 py-2 rounded-md border border-gray-200 w-full xs:w-48" />
-        <label class="sr-only" for="box">Box</label>
-        <input id="box" v-model="box" required placeholder="Box" type="number" class="w-28 px-3 py-2 rounded-md border border-gray-200" />
-        <button type="submit" class="btn btn-primary">Crear turno</button>
-      </form>
     </header>
 
-    <!-- Grid de turnos -->
-    <section class="turnos-grid">
-      <transition-group name="cards" tag="div" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <article
-          v-for="t in turnos"
-          :key="t._id"
-          class="card card-appear transform transition hover:-translate-y-1"
-        >
-          <div class="flex items-start justify-between gap-4">
+    <main class="flex-1 container mx-auto px-4 py-8">
+      <!-- Panel de control -->
+      <div class="card mb-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-berisso-blue">Gestión de Turnos</h1>
+            <p class="text-gray-600">Administra los turnos en tiempo real</p>
+          </div>
+          
+          <form @submit.prevent="crearTurno" class="flex gap-4">
+            <input v-model="numero" required
+                   class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-berisso-blue"
+                   placeholder="Número (ej: A001)" />
+            <input v-model="box" required type="number"
+                   class="px-4 py-2 border rounded-lg w-24 focus:ring-2 focus:ring-berisso-blue"
+                   placeholder="Box" />
+            <button type="submit" class="button-primary">
+              Crear Turno
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Lista de turnos -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="turno in turnos" :key="turno._id" 
+             class="card hover:shadow-xl">
+          <div class="flex justify-between items-start mb-4">
             <div>
-              <div class="text-sm text-gray-500">Turno</div>
-              <div class="text-2xl font-extrabold text-gray-900">{{ t.numero }}</div>
-              <div class="text-sm text-gray-600 mt-1">Box {{ t.box }}</div>
-
-              <div class="mt-3">
-                <span :class="estadoBadgeClass(t.estado)" class="badge">
-                  {{ estadoLabel(t.estado) }}
-                </span>
-              </div>
+              <span class="text-3xl font-bold text-berisso-blue">{{ turno.numero }}</span>
+              <div class="text-gray-600">Box {{ turno.box }}</div>
             </div>
+            <span :class="['status-badge', `status-badge-${turno.estado}`]">
+              {{ estadoLabel(turno.estado) }}
+            </span>
+          </div>
 
-            <div class="flex flex-col items-end gap-2">
-              <div class="flex gap-2">
-                <button
-                  @click="actualizarTurno(t._id, 'llamando')"
-                  :disabled="t.estado === 'llamando'"
-                  class="btn btn-ghost"
-                  aria-label="Llamar turno"
-                >Llamar</button>
-
-                <button
-                  @click="actualizarTurno(t._id, 'atendido')"
-                  :disabled="t.estado === 'atendido'"
-                  class="btn btn-primary"
-                  aria-label="Marcar atendido"
-                >Atendido</button>
-              </div>
-
-              <button
-                @click="actualizarTurno(t._id, 'perdido')"
-                class="btn btn-danger"
-                aria-label="Marcar perdido"
-              >Perdido</button>
+          <div class="flex flex-col gap-2">
+            <button @click="actualizarTurno(turno._id, 'llamando')"
+                    :disabled="turno.estado === 'llamando'"
+                    class="button-secondary">
+              Llamar
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+              <button @click="actualizarTurno(turno._id, 'atendido')"
+                      :disabled="turno.estado === 'atendido'"
+                      class="button-primary">
+                Atendido
+              </button>
+              <button @click="actualizarTurno(turno._id, 'perdido')"
+                      class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                Perdido
+              </button>
             </div>
           </div>
-        </article>
-      </transition-group>
-    </section>
-
-    <!-- Footer / ayuda -->
-    <footer class="mt-8 text-sm text-gray-500">
-      Consejo: usa los botones para cambiar estado; los cambios se propagan en tiempo real a todas las pantallas.
-    </footer>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
@@ -170,4 +165,59 @@ function estadoBadgeClass(e) {
 .cards-enter-active, .cards-leave-active { transition: all .25s ease; }
 .cards-enter-from { opacity: 0; transform: translateY(6px); }
 .cards-enter-to { opacity: 1; transform: translateY(0); }
+
+.header-container {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.button-primary {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.button-primary:hover {
+  background-color: #2563eb;
+}
+
+.button-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.button-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge-llamando {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.status-badge-atendido {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-badge-perdido {
+  background-color: #f44336;
+  color: white;
+}
 </style>

@@ -1,61 +1,69 @@
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    <header class="mb-6 text-center">
-      <div class="kicker">Turnos</div>
-      <h1 class="h1 text-3xl md:text-4xl">Tu turno</h1>
-      <p class="text-gray-600 mt-1">Consulta en tiempo real el estado y los últimos atendidos.</p>
+  <div class="min-h-screen flex flex-col">
+    <!-- Header con logo y fecha -->
+    <header class="header-container">
+      <div class="flex items-center gap-4">
+        <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
+        <div class="text-xl font-semibold">Turnero de Licencias</div>
+      </div>
+      <div class="text-right">
+        <div class="text-xl">{{ fechaActual }}</div>
+        <div class="text-2xl font-bold">{{ horaActual }}</div>
+      </div>
     </header>
 
-    <!-- Tarjeta principal con turno activo -->
-    <section class="mb-8">
-      <div v-if="turnoActivo" class="card mx-auto max-w-2xl text-center">
-        <div class="text-sm text-gray-500">Tu turno</div>
-        <div :class="['big-number my-2', { 'pulse-number': pulse }]" class="my-2">{{ turnoActivo.numero }}</div>
-        <div class="text-lg text-gray-700 mb-4">Box {{ turnoActivo.box }}</div>
-
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <div :class="estadoBadgeClass(turnoActivo.estado)" class="badge">
-            {{ estadoLabel(turnoActivo.estado) }}
+    <main class="flex-1 container mx-auto px-4 py-8">
+      <!-- Turno Actual -->
+      <div class="max-w-4xl mx-auto mb-12">
+        <div class="card text-center">
+          <h2 class="text-2xl text-berisso-blue mb-4">Turno Actual</h2>
+          <div v-if="turnoActivo" class="space-y-4">
+            <div class="main-number">{{ turnoActivo.numero }}</div>
+            <div class="text-box font-bold text-berisso-blue">Box {{ turnoActivo.box }}</div>
+            <div class="flex justify-center gap-4 items-center">
+              <span :class="['status-badge', `status-badge-${turnoActivo.estado}`]">
+                {{ estadoLabel(turnoActivo.estado) }}
+              </span>
+            </div>
           </div>
-          <div class="text-sm text-gray-600">Última actualización: {{ formatoFecha(turnoActivo.updatedAt) }}</div>
+          <div v-else class="text-xl text-gray-500">
+            No hay turnos activos en este momento
+          </div>
         </div>
       </div>
 
-      <div v-else class="card mx-auto max-w-2xl text-center">
-        <div class="text-lg font-medium text-gray-700">No hay turnos activos</div>
-        <p class="text-sm text-gray-500 mt-1">Solicitá un turno desde el sector de administración o acercate al mostrador.</p>
-      </div>
-    </section>
+      <!-- Grilla de estados -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Últimos atendidos -->
+        <div class="card">
+          <h3 class="text-xl font-semibold mb-4">Últimos Atendidos</h3>
+          <div class="space-y-3">
+            <div v-for="turno in ultimosAtendidos" :key="turno._id"
+                 class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <span class="text-xl font-bold">{{ turno.numero }}</span>
+              <span class="text-berisso-green font-medium">Box {{ turno.box }}</span>
+            </div>
+          </div>
+        </div>
 
-    <!-- Listas: últimos atendidos y perdidos recientes -->
-    <section class="grid gap-6 grid-cols-1 md:grid-cols-2">
-      <div class="card">
-        <div class="text-lg font-semibold mb-3">Últimos atendidos</div>
-        <ul class="space-y-2">
-          <li v-for="t in ultimosAtendidos" :key="t._id" class="flex justify-between items-center bg-gray-50 rounded-md px-3 py-2">
-            <div class="font-medium text-gray-800">{{ t.numero }}</div>
-            <div class="text-sm text-green-700">Atendido</div>
-          </li>
-          <li v-if="ultimosAtendidos.length === 0" class="text-sm text-gray-500">No hay atendidos recientes.</li>
-        </ul>
+        <!-- Turnos perdidos -->
+        <div class="card">
+          <h3 class="text-xl font-semibold mb-4">Turnos Perdidos</h3>
+          <div class="space-y-3">
+            <div v-for="turno in ultimosPerdidos" :key="turno._id"
+                 class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <span class="text-xl font-bold">{{ turno.numero }}</span>
+              <span class="text-red-500 font-medium">Box {{ turno.box }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="card">
-        <div class="text-lg font-semibold mb-3">Turnos perdidos recientes</div>
-        <ul class="space-y-2">
-          <li v-for="t in ultimosPerdidos" :key="t._id" class="flex justify-between items-center bg-gray-50 rounded-md px-3 py-2">
-            <div class="font-medium text-gray-800">{{ t.numero }}</div>
-            <div class="text-sm text-red-600">Perdido</div>
-          </li>
-          <li v-if="ultimosPerdidos.length === 0" class="text-sm text-gray-500">No hay turnos perdidos recientes.</li>
-        </ul>
-      </div>
-    </section>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, inject, watch } from "vue";
+import { ref, onMounted, computed, inject, watch } from "vue";
 import api from "../services/api";
 import { showToast } from "../services/toast";
 
@@ -96,10 +104,19 @@ onMounted(() => {
   } else {
     showToast("Conexión en tiempo real no disponible", "error");
   }
+
+  setInterval(() => {
+    horaActual.value = new Date().toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, 60000);
 });
 
-onUnmounted(() => {
-  if (socket) socket.off("turno_actualizado", socketHandler);
+watch(turnoActivo, (newVal) => {
+  if (!newVal) return;
+  pulse.value = true;
+  setTimeout(() => (pulse.value = false), 420);
 });
 
 // Computed helpers
@@ -113,11 +130,21 @@ const turnoActivo = computed(() => {
 const ultimosAtendidos = computed(() => turnos.value.filter(t => t.estado === "atendido").slice(0, 5));
 const ultimosPerdidos = computed(() => turnos.value.filter(t => t.estado === "perdido").slice(0, 5));
 
-// Animación al cambiar el turno principal
-watch(turnoActivo, (newVal) => {
-  if (!newVal) return;
-  pulse.value = true;
-  setTimeout(() => (pulse.value = false), 420);
+// Fecha y hora actual
+const fechaActual = computed(() => {
+  return new Date().toLocaleDateString('es-AR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+});
+
+const horaActual = computed(() => {
+  return new Date().toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 });
 
 // UX helpers
@@ -149,4 +176,24 @@ function formatoFecha(ts) {
 @media (min-width: 768px) {
   .big-number { font-size: 6rem; }
 }
+
+/* Estilos generales */
+.header-container {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-bottom: 1px solid #e1e1e1;
+}
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.status-badge-llamando { background-color: #f59e0b; color: white; }
+.status-badge-atendido { background-color: #10b981; color: white; }
+.status-badge-perdido { background-color: #ef4444; color: white; }
+
+/* Colores personalizados */
+.text-berisso-blue { color: #1e3a8a; }
+.text-berisso-green { color: #065f46; }
 </style>

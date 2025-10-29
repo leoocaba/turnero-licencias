@@ -136,3 +136,51 @@ body {
   .shadow-card { box-shadow: var(--card-shadow); }
   .text-berisso { color: var(--berisso-500); }
 }
+
+@layer base {
+  body {
+    @apply bg-berisso-gray text-berisso-blue;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .header-container {
+    @apply bg-berisso-blue text-white px-8 py-4 flex justify-between items-center;
+  }
+
+  .main-number {
+    @apply text-turnero font-bold text-berisso-blue leading-none;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .status-badge {
+    @apply px-4 py-2 rounded-full text-sm font-semibold;
+  }
+
+  .status-badge-llamando {
+    @apply bg-berisso-gold text-berisso-blue;
+  }
+
+  .status-badge-atendido {
+    @apply bg-berisso-green text-white;
+  }
+
+  .status-badge-perdido {
+    @apply bg-red-500 text-white;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-8 transition-all duration-300;
+  }
+
+  .button-primary {
+    @apply bg-berisso-green text-white px-6 py-3 rounded-lg font-semibold 
+           hover:bg-opacity-90 transition-all duration-200;
+  }
+
+  .button-secondary {
+    @apply bg-berisso-blue text-white px-6 py-3 rounded-lg font-semibold 
+           hover:bg-opacity-90 transition-all duration-200;
+  }
+}
