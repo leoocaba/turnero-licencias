@@ -1,15 +1,10 @@
 // models/Turno.js
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-const turnoSchema = new mongoose.Schema({
+const TurnoSchema = new mongoose.Schema({
   numero: { type: String, required: true },
-  box: { type: Number, default: null },
-  estado: { 
-    type: String, 
-    enum: ["pendiente", "llamando", "atendido", "perdido"], 
-    default: "pendiente" 
-  },
-  createdAt: { type: Date, default: Date.now },
-});
+  box: { type: Number, required: false },
+  estado: { type: String, default: 'pendiente' }
+}, { timestamps: true });
 
-export default mongoose.model("Turno", turnoSchema);
+module.exports = mongoose.model('Turno', TurnoSchema);
