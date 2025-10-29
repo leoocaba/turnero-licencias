@@ -1,108 +1,104 @@
-// server.js
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import cors from "cors";
-import Turno from "./models/Turno.js";
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-dotenv.config();
+const Turno = require("./models/Turno"); // asegúrate que exporte el modelo correctamente
 
-// --- Configuración base ---
+const PORT = process.env.PORT || 4000;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/prueba";
+
 const app = express();
+app.use(express.json());
+app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+
+// Rutas básicas
+app.get("/api/health", (req, res) => res.json({ ok: true, env: process.env.APP_NAME || "turnero" }));
+
+// Server + socket.io
 const server = http.createServer(app);
+const { Server } = require("socket.io");
 const io = new Server(server, {
-  cors: { 
-    origin: process.env.FRONTEND_URL || "*",
-    methods: ["GET", "POST", "PUT"],
-  }
+  cors: { origin: FRONTEND_URL || "*", methods: ["GET", "POST", "PUT", "DELETE"], credentials: true },
 });
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://192.168.0.45:5173",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-
-
-app.use(express.json());
-app.use(express.static("public"));
-
-// --- Conexión MongoDB ---
-const MONGO_URI = process.env.MONGO_URI;
-mongoose
-  .connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch((err) => {
-    console.error("❌ Error conectando a MongoDB:", err);
-    process.exit(1);
+io.on("connection", (socket) => {
+  console.log("Socket conectado:", socket.id);
+  socket.on("disconnect", (reason) => {
+    console.log("Socket desconectado:", socket.id, reason);
   });
+});
 
-// --- Rutas REST ---
-app.get("/", (req, res) => res.send("Turnero backend OK 🚀"));
+// Helper para emitir actualizaciones
+function emitirActualizacion(action, turno) {
+  const payload = { action, turno };
+  io.emit("turno_actualizado", payload);
+  console.log("Emitiendo turno_actualizado", payload.action, turno && turno._id);
+}
 
+/*
+  Endpoints para turnos
+  - GET /api/turnos
+  - POST /api/turnos
+  - PUT  /api/turnos/:id
+*/
 app.get("/api/turnos", async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const turnos = await Turno.find().sort({ createdAt: -1 }).limit(limit).exec();
-    res.json(turnos);
+    const items = await Turno.find().sort({ createdAt: -1 }).lean();
+    res.json(items);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "error obteniendo turnos" });
+    res.status(500).json({ error: "Error al listar turnos" });
   }
 });
 
 app.post("/api/turnos", async (req, res) => {
   try {
-    const { numero, box, estado } = req.body;
-    const t = new Turno({ numero, box, estado });
-    await t.save();
-    io.emit("turno_actualizado", { action: "nuevo", turno: t });
-    res.status(201).json(t);
+    const data = req.body || {};
+    // asegúrate que el modelo tenga los campos esperados: numero, box, estado
+    const nuevo = new Turno({
+      numero: data.numero,
+      box: data.box,
+      estado: data.estado || "pendiente",
+      // otros campos que tu modelo requiera
+    });
+    const saved = await nuevo.save();
+    emitirActualizacion("nuevo", saved);
+    res.status(201).json(saved);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "error creando turno" });
+    res.status(500).json({ error: "Error al crear turno" });
   }
 });
 
 app.put("/api/turnos/:id", async (req, res) => {
   try {
-    const t = await Turno.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    io.emit("turno_actualizado", { action: "update", turno: t });
-    res.json(t);
+    const id = req.params.id;
+    const data = req.body || {};
+    const updated = await Turno.findByIdAndUpdate(id, data, { new: true });
+    if (!updated) return res.status(404).json({ error: "Turno no encontrado" });
+    emitirActualizacion("update", updated);
+    res.json(updated);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "error actualizando turno" });
+    res.status(500).json({ error: "Error al actualizar turno" });
   }
 });
 
-// --- Socket.IO ---
-io.on("connection", (socket) => {
-  console.log("🟢 Cliente conectado:", socket.id);
-
-  socket.on("ping", (d) => socket.emit("pong", d));
-
-  socket.on("admin:llamar", async (payload) => {
-    try {
-      const t = new Turno({ numero: payload.numero, box: payload.box, estado: "llamando" });
-      await t.save();
-      io.emit("turno_actualizado", { action: "nuevo", turno: t });
-    } catch (err) {
-      console.error("❌ Error en admin:llamar:", err);
-    }
+// Conectar a Mongo y levantar server
+mongoose
+  .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log("Mongo conectado");
+    server.listen(PORT, () => {
+      console.log(`Backend listo en http://0.0.0.0:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Error conectando Mongo:", err);
+    process.exit(1);
   });
 
-  socket.on("disconnect", () => {
-    console.log("🔴 Cliente desconectado:", socket.id);
-  });
-});
-
-// --- Iniciar servidor ---
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Servidor escuchando en http://0.0.0.0:${PORT}`);
-});
+module.exports = { app, server, io };

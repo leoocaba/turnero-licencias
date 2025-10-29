@@ -1,12 +1,22 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://192.168.0.45:4000";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || `${location.protocol}//${location.hostname}:4000`;
 
 const socket = io(SOCKET_URL, {
-  transports: ["websocket"],
   autoConnect: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  transports: ["websocket", "polling"],
+});
+
+socket.on("connect", () => {
+  console.info("[socket] connected", socket.id);
+});
+socket.on("connect_error", (err) => {
+  console.warn("[socket] connect_error", err && err.message ? err.message : err);
+});
+socket.on("disconnect", (reason) => {
+  console.info("[socket] disconnected", reason);
 });
 
 export default socket;
