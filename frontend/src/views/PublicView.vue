@@ -1,14 +1,26 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header con logo y fecha -->
-    <header class="header-container">
+    <!-- Header con logo y fecha (ahora con switch a la derecha) -->
+    <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
-        <div class="text-xl font-semibold">Turnero de Licencias</div>
       </div>
-      <div class="text-right">
+
+      <div class="text-right header-right flex items-center gap-4">
         <div class="text-sm capitalize">{{ fechaActual }}</div>
         <div class="text-lg font-bold">{{ horaActual }}</div>
+
+        <!-- Switch elegante sutil (usa toggle sin reload) -->
+        <button
+          class="view-switch"
+          :class="{ 'on': isAdmin.value }"
+          @click="toggle"
+          :aria-pressed="isAdmin.value"
+          aria-label="Alternar vista admin / pública"
+        >
+          <span class="switch-track" />
+          <span class="switch-thumb" />
+        </button>
       </div>
     </header>
 
@@ -70,6 +82,10 @@ import api from "../services/api";
 import { showToast } from "../services/toast";
 
 const socket = inject("socket");
+const isAdmin = inject('isAdmin');
+const toggleAdmin = inject('toggleAdmin');
+function toggle() { toggleAdmin && toggleAdmin(); }
+
 const turnos = ref([]);
 const pulse = ref(false);
 
@@ -230,4 +246,43 @@ function formatoFecha(ts) {
 .header-container {
   @apply bg-berisso-blue text-white px-8 py-4 flex justify-between items-center;
 }
+
+/* Reusa estilos del switch definidos en AdminView (si están scope distintos, los repetimos) */
+.view-switch {
+  --w: 48px;
+  --h: 26px;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform .12s ease;
+}
+.view-switch .switch-track {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: background .2s ease;
+}
+.view-switch .switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(var(--h) - 6px);
+  height: calc(var(--h) - 6px);
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 4px 10px rgba(2,6,23,0.2);
+  transition: left .18s cubic-bezier(.2,.9,.3,1), background .18s;
+}
+.view-switch.on .switch-track { background: rgba(62,192,74,0.95); }
+.view-switch.on .switch-thumb { left: calc(100% - (var(--h) - 3px)); background: white; }
+
+.view-switch:hover { transform: translateY(-1px); }
 </style>

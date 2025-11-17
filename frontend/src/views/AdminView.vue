@@ -13,9 +13,9 @@
         <div class="mt-2">
           <button
             class="view-switch"
-            :class="{ 'on': isAdmin }"
-            @click="toggleAdmin"
-            :aria-pressed="isAdmin"
+            :class="{ 'on': isAdmin.value }"
+            @click="toggle"
+            :aria-pressed="isAdmin.value"
             aria-label="Alternar vista admin / pública"
           >
             <span class="switch-track" />
@@ -31,7 +31,7 @@
     </header>
 
     <main class="flex-1 p-6">
-      <!-- Panel de control -->
+      <!-- Panel de control (sin cambios) -->
       <div class="card mb-8">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
@@ -55,8 +55,7 @@
 
       <!-- Lista de turnos -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="turno in turnos" :key="turno._id" 
-             class="card hover:shadow-xl">
+        <div v-for="turno in turnos" :key="turno._id" class="card hover:shadow-xl">
           <div class="flex justify-between items-start mb-4">
             <div>
               <span class="text-3xl font-bold text-berisso-blue">{{ turno.numero }}</span>
@@ -101,6 +100,13 @@ const turnos = ref([]);
 const numero = ref("");
 const box = ref("");
 
+// inject SPA toggle helpers
+const isAdmin = inject('isAdmin');
+const toggleAdmin = inject('toggleAdmin');
+
+// Crear una función local para el botón
+function toggle() { toggleAdmin && toggleAdmin(); }
+
 // Cargar turnos iniciales
 async function cargarTurnos() {
   try {
@@ -112,7 +118,7 @@ async function cargarTurnos() {
   }
 }
 
-// Manejo de emisiones socket (sin duplicados)
+// Manejo de emisiones socket
 function socketHandler(payload) {
   const data = payload || {};
   const turno = data.turno || payload;
@@ -132,19 +138,15 @@ function socketHandler(payload) {
 
 onMounted(() => {
   cargarTurnos();
-
-  if (socket) {
-    socket.on("turno_actualizado", socketHandler);
-  } else {
-    showToast("Socket no conectado", "error");
-  }
+  if (socket) socket.on("turno_actualizado", socketHandler);
+  else showToast("Socket no conectado", "error");
 });
 
 onUnmounted(() => {
   if (socket) socket.off("turno_actualizado", socketHandler);
 });
 
-// Crear turno (servidor es fuente de verdad)
+// Crear / actualizar turnos (sin cambios)
 async function crearTurno() {
   try {
     await api.post("/turnos", { numero: numero.value, box: parseInt(box.value, 10) });
@@ -157,7 +159,6 @@ async function crearTurno() {
   }
 }
 
-// Actualizar estado (el servidor emitirá la actualización)
 async function actualizarTurno(id, estado) {
   try {
     await api.put(`/turnos/${id}`, { estado });
@@ -175,14 +176,8 @@ function estadoLabel(e) {
   if (e === "perdido") return "Perdido";
   return e || "Pendiente";
 }
-function estadoBadgeClass(e) {
-  if (e === "llamando") return "badge-llamando";
-  if (e === "atendido") return "badge-atendido";
-  if (e === "perdido") return "badge-perdido";
-  return "badge-default";
-}
 
-// Fecha y hora (si ya las tienes en el Admin, reutiliza)
+// Fecha y hora
 const fechaActual = computed(() => new Date().toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
 const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }));
 
@@ -195,28 +190,6 @@ onMounted(() => {
 onUnmounted(() => {
   if (_interval) clearInterval(_interval);
 });
-
-// Toggle view: se basa en query param ?admin=1
-const isAdmin = computed(() => {
-  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const v = params.get('admin') || params.get('modo');
-  return v === '1' || v === 'true';
-});
-
-function toggleAdmin() {
-  const params = new URLSearchParams(window.location.search);
-  if (isAdmin.value) {
-    params.delete('admin');
-    params.delete('modo');
-  } else {
-    params.set('admin', '1');
-  }
-  const newSearch = params.toString();
-  const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
-  // reemplazamos el estado y recargamos la vista para que App.vue vuelva a renderizar la vista correcta
-  history.replaceState({}, '', newUrl);
-  window.location.reload();
-}
 </script>
 
 <style scoped>
