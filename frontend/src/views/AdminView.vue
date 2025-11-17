@@ -1,13 +1,27 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <header class="header-container">
+    <!-- Header azul (logo a la izquierda, título y botones centrados, hora a la derecha) -->
+    <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
-        <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
-        <div class="text-xl font-semibold">Panel de Administración</div>
+        <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-14 w-auto" />
+      </div>
+
+      <div class="header-center text-center flex-1">
+        <h1 class="text-white text-2xl font-bold mb-2">Turnero de Licencias</h1>
+        <div class="inline-flex gap-3">
+          <button class="px-4 py-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition">Vista Pública</button>
+          <button class="px-4 py-2 rounded-md bg-emerald-500 text-white hover:bg-emerald-600 transition">Vista Admin</button>
+        </div>
+      </div>
+
+      <div class="text-right text-white">
+        <!-- Si ya tienes componente/fecha-hora, mantenelo -->
+        <div class="text-sm">{{ fechaActual }}</div>
+        <div class="text-lg font-semibold">{{ horaActual }}</div>
       </div>
     </header>
 
-    <main class="flex-1 container mx-auto px-4 py-8">
+    <main class="flex-1 p-6">
       <!-- Panel de control -->
       <div class="card mb-8">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -69,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, inject } from "vue";
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
 import api from "../services/api";
 import { showToast } from "../services/toast";
 
@@ -158,6 +172,20 @@ function estadoBadgeClass(e) {
   if (e === "perdido") return "badge-perdido";
   return "badge-default";
 }
+
+// Fecha y hora (si ya las tienes en el Admin, reutiliza)
+const fechaActual = computed(() => new Date().toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
+const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }));
+
+let _interval = null;
+onMounted(() => {
+  _interval = setInterval(() => {
+    horaActual.value = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  }, 60000);
+});
+onUnmounted(() => {
+  if (_interval) clearInterval(_interval);
+});
 </script>
 
 <style scoped>
@@ -167,9 +195,20 @@ function estadoBadgeClass(e) {
 .cards-enter-to { opacity: 1; transform: translateY(0); }
 
 .header-container {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  background: #002b5c; /* azul Berisso */
+  min-height: 72px;
+  align-items: center;
+}
+.header-center {
+  /* fuerza centrado del contenido (titulo + botones) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+@media (min-width: 1024px) {
+  .header-center { padding-left: 2rem; padding-right: 2rem; }
 }
 
 .button-primary {
