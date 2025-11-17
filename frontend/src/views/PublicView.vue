@@ -202,10 +202,10 @@ function estadoBadgeClass(e) {
   align-items: center;
 }
 
-/* Switch actualizado */
+/* SWITCH mejorado: labels fuera de la trayectoria del thumb, visibles y con color */
 .view-switch {
-  --w: 92px;
-  --h: 36px;
+  --w: 120px;
+  --h: 38px;
   position: relative;
   width: var(--w);
   height: var(--h);
@@ -220,7 +220,7 @@ function estadoBadgeClass(e) {
   overflow: visible;
 }
 
-/* track atrás (z-index bajo) */
+/* track (detrás) */
 .switch-track {
   position: absolute;
   inset: 0;
@@ -231,15 +231,16 @@ function estadoBadgeClass(e) {
   z-index: 1;
 }
 
+/* track ON color */
 .view-switch.on .switch-track {
   background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
 }
 
-/* thumb (z-index arriba) */
+/* thumb (por debajo de las labels para que éstas siempre queden visibles) */
 .switch-thumb {
-  --size: calc(var(--h) - 8px);
+  --size: calc(var(--h) - 10px);
   position: absolute;
-  left: 6px;
+  left: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: var(--size);
@@ -247,44 +248,53 @@ function estadoBadgeClass(e) {
   border-radius: 50%;
   background: white;
   box-shadow: 0 6px 18px rgba(2,6,23,0.18);
-  transition: transform .18s cubic-bezier(.2,.9,.3,1), left .18s;
-  z-index: 3;
+  transition: left .18s cubic-bezier(.2,.9,.3,1), transform .12s;
+  z-index: 2;
 }
 
 /* mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
-  left: calc(100% - var(--size) - 6px);
+  left: calc(100% - var(--size) - 8px);
 }
 
-/* Labels (z-index intermedio, siempre visibles) */
+/* labels: colocadas fuera del recorrido del thumb y siempre por encima (z-index) */
 .switch-label {
   position: absolute;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
   transition: opacity .15s ease, transform .15s ease, color .15s;
-  z-index: 2;
-  color: rgba(255,255,255,0.92);
+  z-index: 3;
+  color: rgba(255,255,255,0.95);
+  max-width: calc(var(--w) - var(--size) - 30px);
 }
 
-/* separación de labels para evitar solapamiento con thumb */
-.switch-label-off { left: 22px; opacity: 1; transform: translateX(0); }
-.switch-label-on  { right: 22px; opacity: 0; transform: translateX(6px); }
+/* separaciones para que no queden debajo del thumb */
+.switch-label-off { left: calc(var(--size) + 12px); opacity: 1; transform: translateX(0); }
+.switch-label-on  { right: calc(var(--size) + 12px); opacity: 0; transform: translateX(6px); }
 
 /* mostrar/ocultar según estado */
-.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); }
-.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); }
+.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); color: rgba(255,255,255,0.85); }
+.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); color: #fff; }
 
-/* Hover sutil */
+/* colores según estado (mejor contraste) */
+.view-switch:not(.on) .switch-label-off { color: #ffffff; }
+.view-switch:not(.on) .switch-label-on  { color: rgba(255,255,255,0.6); }
+
+/* hover sutil */
 .view-switch:hover .switch-thumb { transform: translateY(-52%); }
 .view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
 
-/* Ajustes responsive: reducir tamaño en pantallas pequeñas */
+/* responsive: reducir tamaño en móviles */
 @media (max-width: 420px) {
-  .view-switch { --w:74px; --h:30px; }
-  .switch-label-off, .switch-label-on { left:12px; right:12px; font-size:0.8rem; }
+  .view-switch { --w: 100px; --h: 34px; }
+  .switch-label { font-size: 0.78rem; max-width: calc(var(--w) - var(--size) - 26px); }
 }
 
+/* Card y resto de estilos (mantener como estaban) */
 .card {
   background: white;
   border-radius: 12px;
@@ -292,44 +302,13 @@ function estadoBadgeClass(e) {
   padding: 2rem;
 }
 
-.big-number {
-  font-size: 4.5rem;
-  font-weight: 800;
-  color: #002b5c;
-}
+.big-number { font-size: 4.5rem; font-weight: 800; color: #002b5c; }
+@media (min-width: 768px) { .big-number { font-size: 6rem; } }
+.pulse-number { animation: pulse 420ms cubic-bezier(0.4,0,0.6,1); }
+@keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.05);} }
 
-@media (min-width: 768px) {
-  .big-number { font-size: 6rem; }
-}
-
-.pulse-number {
-  animation: pulse 420ms cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.status-badge {
-  padding: 0.35rem 1rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.status-badge-llamando {
-  background: #ffa500;
-  color: white;
-}
-
-.status-badge-atendido {
-  background: #3ec04a;
-  color: white;
-}
-
-.status-badge-perdido {
-  background: #ef4444;
-  color: white;
-}
+.status-badge { padding:.35rem 1rem; border-radius:9999px; font-weight:600; font-size:.875rem; }
+.status-badge-llamando { background:#ffa500; color:white; }
+.status-badge-atendido { background:#3ec04a; color:white; }
+.status-badge-perdido { background:#ef4444; color:white; }
 </style>
