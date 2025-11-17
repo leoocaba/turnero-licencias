@@ -16,11 +16,13 @@
             :class="{ 'on': isAdmin.value }"
             @click="toggle"
             :aria-pressed="isAdmin.value"
-            aria-label="Alternar vista admin / pública"
+            :aria-label="isAdmin.value ? 'Ver como Admin' : 'Ver como Público'"
             type="button"
           >
             <span class="switch-track" />
             <span class="switch-thumb" />
+            <span class="switch-label switch-label-off">Público</span>
+            <span class="switch-label switch-label-on">Admin</span>
           </button>
         </div>
       </div>
@@ -216,110 +218,82 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
-  padding: 2rem;
-}
-
-.button-primary {
-  background: #3ec04a;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.button-primary:hover { background: #34a03a; }
-.button-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.button-secondary {
-  background: #002b5c;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.button-secondary:hover { background: #001a38; }
-.button-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.status-badge {
-  padding: 0.35rem 1rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.status-badge-llamando {
-  background: #ffa500;
-  color: white;
-}
-
-.status-badge-atendido {
-  background: #3ec04a;
-  color: white;
-}
-
-.status-badge-perdido {
-  background: #ef4444;
-  color: white;
-}
-
-/* Switch styles */
+/* Reusa estilos del switch (mismo diseño que PublicView) */
 .view-switch {
-  --w: 48px;
-  --h: 26px;
+  --w: 92px;
+  --h: 36px;
   position: relative;
   width: var(--w);
   height: var(--h);
+  border-radius: 999px;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
-  display: inline-block;
-  transition: transform 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
 }
 
-.view-switch .switch-track {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: background 0.2s ease;
-}
-
-.view-switch .switch-thumb {
+.switch-track {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(var(--h) - 6px);
-  height: calc(var(--h) - 6px);
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.2);
-  transition: left 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.18s;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  transition: background .18s ease, box-shadow .18s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .view-switch.on .switch-track {
-  background: rgba(62, 192, 74, 0.95);
+  background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
+}
+
+.switch-thumb {
+  --size: calc(var(--h) - 8px);
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.18);
+  transition: transform .18s cubic-bezier(.2,.9,.3,1), left .18s;
 }
 
 .view-switch.on .switch-thumb {
-  left: calc(100% - (var(--h) - 3px));
-  background: white;
+  left: calc(100% - var(--size) - 6px);
 }
 
-.view-switch:hover {
-  transform: translateY(-1px);
+.switch-label {
+  position: absolute;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.95);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
 }
+.switch-label-off { left: 14px; opacity: 1; transform: translateX(0); }
+.switch-label-on { right: 14px; opacity: 0; transform: translateX(6px); }
+.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); }
+.view-switch.on .switch-label-on { opacity: 1; transform: translateX(0); }
+
+.card { background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06); padding: 2rem; }
+
+.button-primary { background: #3ec04a; color: white; padding: .75rem 1.5rem; border-radius:.5rem; border:none; font-weight:600; cursor:pointer; transition:background .2s; }
+.button-primary:hover { background: #34a03a; }
+.button-primary:disabled { opacity:.5; cursor:not-allowed; }
+.button-secondary { background:#002b5c; color:white; padding:.75rem 1.5rem; border-radius:.5rem; border:none; font-weight:600; cursor:pointer; transition:background .2s; }
+.button-secondary:hover { background:#001a38; }
+.button-secondary:disabled { opacity:.5; cursor:not-allowed; }
+
+.status-badge { padding:.35rem 1rem; border-radius:9999px; font-weight:600; font-size:.875rem; }
+.status-badge-llamando { background:#ffa500; color:white; }
+.status-badge-atendido { background:#3ec04a; color:white; }
+.status-badge-perdido { background:#ef4444; color:white; }
+
+.view-switch:hover .switch-thumb { transform: translateY(-52%); }
+.view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
 </style>
