@@ -216,11 +216,11 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* SWITCH: variables a nivel raíz del botón */
+/* SWITCH LIMPIO Y FUNCIONAL */
 .view-switch {
   --w: 120px;
   --h: 38px;
-  --thumb-size: calc(var(--h) - 10px);
+  --thumb-w: 28px;
   position: relative;
   width: var(--w);
   height: var(--h);
@@ -231,97 +231,74 @@ onUnmounted(() => {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   overflow: visible;
 }
 
-/* Track (detrás) */
 .switch-track {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  transition: background .18s ease, box-shadow .18s ease;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-  z-index: 1;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s ease;
+  z-index: 0;
 }
 
-/* Track cuando está ON (verde) */
 .view-switch.on .switch-track {
-  background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  background: #3ec04a;
 }
 
-/* Thumb (blanco, se mueve) */
 .switch-thumb {
   position: absolute;
-  left: 8px;
+  left: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: var(--thumb-size);
-  height: var(--thumb-size);
+  width: var(--thumb-w);
+  height: var(--thumb-w);
   border-radius: 50%;
   background: white;
-  box-shadow: 0 6px 18px rgba(2,6,23,0.18);
-  transition: left .2s cubic-bezier(0.2, 0.9, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 2;
 }
 
-/* Mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
-  left: calc(100% - var(--thumb-size) - 8px);
+  left: calc(100% - var(--thumb-w) - 5px);
 }
 
-/* Labels (texto Público/Admin) */
 .switch-label {
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  color: white;
+  z-index: 1;
   white-space: nowrap;
-  pointer-events: none;
-  transition: opacity .2s ease, transform .2s ease;
-  z-index: 3;
-  color: rgba(255,255,255,0.95);
+  transition: opacity 0.2s ease;
 }
 
-/* Label OFF (Público, visible al inicio) */
 .switch-label-off {
-  left: calc(var(--thumb-size) + 16px);
+  left: 40px;
   opacity: 1;
-  transform: translateX(0);
-  color: #ffffff;
 }
 
-/* Label ON (Admin, oculto al inicio) */
 .switch-label-on {
-  right: calc(var(--thumb-size) + 16px);
+  right: 40px;
   opacity: 0;
-  transform: translateX(6px);
-  color: rgba(255,255,255,0.6);
 }
 
-/* Cuando está ON: mostrar Admin, ocultar Público */
 .view-switch.on .switch-label-off {
   opacity: 0;
-  transform: translateX(-6px);
 }
 
 .view-switch.on .switch-label-on {
   opacity: 1;
-  transform: translateX(0);
-  color: #ffffff;
 }
 
-/* Hover sutil */
 .view-switch:hover .switch-thumb {
-  box-shadow: 0 8px 24px rgba(2,6,23,0.22);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-.view-switch:hover .switch-track {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.08);
-}
-
-/* Cards y botones */
 .card {
   background: white;
   border-radius: 12px;
