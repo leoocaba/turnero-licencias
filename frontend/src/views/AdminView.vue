@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header azul (logo a la izquierda, título y botones centrados, hora a la derecha) -->
+    <!-- Header azul (logo a la izquierda, título centrado, switch a la derecha) -->
     <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-14 w-auto" />
@@ -8,14 +8,23 @@
 
       <div class="header-center text-center flex-1">
         <h1 class="text-white text-2xl font-bold mb-2">Turnero de Licencias</h1>
-        <div class="inline-flex gap-3">
-          <button class="px-4 py-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition">Vista Pública</button>
-          <button class="px-4 py-2 rounded-md bg-emerald-500 text-white hover:bg-emerald-600 transition">Vista Admin</button>
+
+        <!-- Switch elegante sutil -->
+        <div class="mt-2">
+          <button
+            class="view-switch"
+            :class="{ 'on': isAdmin }"
+            @click="toggleAdmin"
+            :aria-pressed="isAdmin"
+            aria-label="Alternar vista admin / pública"
+          >
+            <span class="switch-track" />
+            <span class="switch-thumb" />
+          </button>
         </div>
       </div>
 
       <div class="text-right text-white">
-        <!-- Si ya tienes componente/fecha-hora, mantenelo -->
         <div class="text-sm">{{ fechaActual }}</div>
         <div class="text-lg font-semibold">{{ horaActual }}</div>
       </div>
@@ -186,6 +195,28 @@ onMounted(() => {
 onUnmounted(() => {
   if (_interval) clearInterval(_interval);
 });
+
+// Toggle view: se basa en query param ?admin=1
+const isAdmin = computed(() => {
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const v = params.get('admin') || params.get('modo');
+  return v === '1' || v === 'true';
+});
+
+function toggleAdmin() {
+  const params = new URLSearchParams(window.location.search);
+  if (isAdmin.value) {
+    params.delete('admin');
+    params.delete('modo');
+  } else {
+    params.set('admin', '1');
+  }
+  const newSearch = params.toString();
+  const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+  // reemplazamos el estado y recargamos la vista para que App.vue vuelva a renderizar la vista correcta
+  history.replaceState({}, '', newUrl);
+  window.location.reload();
+}
 </script>
 
 <style scoped>
@@ -259,4 +290,44 @@ onUnmounted(() => {
   background-color: #f44336;
   color: white;
 }
+
+/* Switch styles */
+.view-switch {
+  --w: 48px;
+  --h: 26px;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform .12s ease;
+}
+.view-switch .switch-track {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: background .2s ease;
+}
+.view-switch .switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(var(--h) - 6px);
+  height: calc(var(--h) - 6px);
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 4px 10px rgba(2,6,23,0.2);
+  transition: left .18s cubic-bezier(.2,.9,.3,1), background .18s;
+}
+.view-switch.on .switch-track { background: rgba(62,192,74,0.95); }
+.view-switch.on .switch-thumb { left: calc(100% - (var(--h) - 3px)); background: white; }
+
+/* pequeño hover */
+.view-switch:hover { transform: translateY(-1px); }
 </style>
