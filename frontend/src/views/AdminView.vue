@@ -216,10 +216,11 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* SWITCH mejorado: labels fuera de la trayectoria del thumb, visibles y con color */
+/* SWITCH: variables a nivel raíz del botón */
 .view-switch {
   --w: 120px;
   --h: 38px;
+  --thumb-size: calc(var(--h) - 10px);
   position: relative;
   width: var(--w);
   height: var(--h);
@@ -234,76 +235,159 @@ onUnmounted(() => {
   overflow: visible;
 }
 
+/* Track (detrás) */
 .switch-track {
   position: absolute;
   inset: 0;
   border-radius: 999px;
   background: rgba(255,255,255,0.12);
-  transition: background .18s ease, box-shadow .18s;
+  transition: background .18s ease, box-shadow .18s ease;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   z-index: 1;
 }
 
+/* Track cuando está ON (verde) */
 .view-switch.on .switch-track {
   background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
+/* Thumb (blanco, se mueve) */
 .switch-thumb {
-  --size: calc(var(--h) - 10px);
   position: absolute;
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: var(--size);
-  height: var(--size);
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   border-radius: 50%;
   background: white;
   box-shadow: 0 6px 18px rgba(2,6,23,0.18);
-  transition: left .18s cubic-bezier(.2,.9,.3,1), transform .12s;
+  transition: left .2s cubic-bezier(0.2, 0.9, 0.3, 1);
   z-index: 2;
 }
 
+/* Mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
-  left: calc(100% - var(--size) - 8px);
+  left: calc(100% - var(--thumb-size) - 8px);
 }
 
+/* Labels (texto Público/Admin) */
 .switch-label {
   position: absolute;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease, color .15s;
+  transition: opacity .2s ease, transform .2s ease;
   z-index: 3;
   color: rgba(255,255,255,0.95);
-  max-width: calc(var(--w) - var(--size) - 30px);
 }
 
-.switch-label-off { left: calc(var(--size) + 12px); opacity: 1; transform: translateX(0); }
-.switch-label-on  { right: calc(var(--size) + 12px); opacity: 0; transform: translateX(6px); }
+/* Label OFF (Público, visible al inicio) */
+.switch-label-off {
+  left: calc(var(--thumb-size) + 16px);
+  opacity: 1;
+  transform: translateX(0);
+  color: #ffffff;
+}
 
-.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); color: rgba(255,255,255,0.85); }
-.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); color: #fff; }
+/* Label ON (Admin, oculto al inicio) */
+.switch-label-on {
+  right: calc(var(--thumb-size) + 16px);
+  opacity: 0;
+  transform: translateX(6px);
+  color: rgba(255,255,255,0.6);
+}
 
-.view-switch:not(.on) .switch-label-off { color: #ffffff; }
-.view-switch:not(.on) .switch-label-on  { color: rgba(255,255,255,0.6); }
+/* Cuando está ON: mostrar Admin, ocultar Público */
+.view-switch.on .switch-label-off {
+  opacity: 0;
+  transform: translateX(-6px);
+}
 
-.view-switch:hover .switch-thumb { transform: translateY(-52%); }
-.view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
+.view-switch.on .switch-label-on {
+  opacity: 1;
+  transform: translateX(0);
+  color: #ffffff;
+}
 
-.card { background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06); padding: 2rem; }
+/* Hover sutil */
+.view-switch:hover .switch-thumb {
+  box-shadow: 0 8px 24px rgba(2,6,23,0.22);
+}
 
-.button-primary { background: #3ec04a; color: white; padding: .75rem 1.5rem; border-radius:.5rem; border:none; font-weight:600; cursor:pointer; transition:background .2s; }
-.button-primary:hover { background: #34a03a; }
-.button-primary:disabled { opacity:.5; cursor:not-allowed; }
-.button-secondary { background:#002b5c; color:white; padding:.75rem 1.5rem; border-radius:.5rem; border:none; font-weight:600; cursor:pointer; transition:background .2s; }
-.button-secondary:hover { background:#001a38; }
-.button-secondary:disabled { opacity:.5; cursor:not-allowed; }
+.view-switch:hover .switch-track {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.08);
+}
 
-.status-badge { padding:.35rem 1rem; border-radius:9999px; font-weight:600; font-size:.875rem; }
-.status-badge-llamando { background:#ffa500; color:white; }
-.status-badge-atendido { background:#3ec04a; color:white; }
-.status-badge-perdido { background:#ef4444; color:white; }
+/* Cards y botones */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  padding: 2rem;
+}
+
+.button-primary {
+  background: #3ec04a;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.button-primary:hover {
+  background: #34a03a;
+}
+
+.button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: #002b5c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.button-secondary:hover {
+  background: #001a38;
+}
+
+.button-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-badge {
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.status-badge-llamando {
+  background: #ffa500;
+  color: white;
+}
+
+.status-badge-atendido {
+  background: #3ec04a;
+  color: white;
+}
+
+.status-badge-perdido {
+  background: #ef4444;
+  color: white;
+}
 </style>
