@@ -220,6 +220,7 @@ function estadoBadgeClass(e) {
   overflow: visible;
 }
 
+/* track atrás (z-index bajo) */
 .switch-track {
   position: absolute;
   inset: 0;
@@ -227,12 +228,14 @@ function estadoBadgeClass(e) {
   background: rgba(255,255,255,0.12);
   transition: background .18s ease, box-shadow .18s;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  z-index: 1;
 }
 
 .view-switch.on .switch-track {
   background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
 }
 
+/* thumb (z-index arriba) */
 .switch-thumb {
   --size: calc(var(--h) - 8px);
   position: absolute;
@@ -245,46 +248,42 @@ function estadoBadgeClass(e) {
   background: white;
   box-shadow: 0 6px 18px rgba(2,6,23,0.18);
   transition: transform .18s cubic-bezier(.2,.9,.3,1), left .18s;
+  z-index: 3;
 }
 
-/* Mover thumb cuando está ON */
+/* mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
   left: calc(100% - var(--size) - 6px);
 }
 
-/* Labels dentro del switch */
+/* Labels (z-index intermedio, siempre visibles) */
 .switch-label {
   position: absolute;
   font-weight: 600;
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.95);
   pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease;
-}
-.switch-label-off {
-  left: 14px;
-  opacity: 1;
-  transform: translateX(0);
-}
-.switch-label-on {
-  right: 14px;
-  opacity: 0;
-  transform: translateX(6px);
+  transition: opacity .15s ease, transform .15s ease, color .15s;
+  z-index: 2;
+  color: rgba(255,255,255,0.92);
 }
 
-/* Mostrar/ocultar labels según estado */
-.view-switch.on .switch-label-off {
-  opacity: 0;
-  transform: translateX(-6px);
-}
-.view-switch.on .switch-label-on {
-  opacity: 1;
-  transform: translateX(0);
-}
+/* separación de labels para evitar solapamiento con thumb */
+.switch-label-off { left: 22px; opacity: 1; transform: translateX(0); }
+.switch-label-on  { right: 22px; opacity: 0; transform: translateX(6px); }
+
+/* mostrar/ocultar según estado */
+.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); }
+.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); }
 
 /* Hover sutil */
 .view-switch:hover .switch-thumb { transform: translateY(-52%); }
 .view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
+
+/* Ajustes responsive: reducir tamaño en pantallas pequeñas */
+@media (max-width: 420px) {
+  .view-switch { --w:74px; --h:30px; }
+  .switch-label-off, .switch-label-on { left:12px; right:12px; font-size:0.8rem; }
+}
 
 .card {
   background: white;

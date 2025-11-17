@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header azul (logo a la izquierda, título centrado, switch a la derecha) -->
+    <!-- Header azul (logo a la izquierda, título centrado, switch y fecha a la derecha) -->
     <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-14 w-auto" />
@@ -8,28 +8,26 @@
 
       <div class="header-center text-center flex-1">
         <h1 class="text-white text-2xl font-bold mb-2">Turnero de Licencias</h1>
-
-        <!-- Switch elegante sutil -->
-        <div class="mt-2">
-          <button
-            class="view-switch"
-            :class="{ 'on': isAdmin.value }"
-            @click="toggle"
-            :aria-pressed="isAdmin.value"
-            :aria-label="isAdmin.value ? 'Ver como Admin' : 'Ver como Público'"
-            type="button"
-          >
-            <span class="switch-track" />
-            <span class="switch-thumb" />
-            <span class="switch-label switch-label-off">Público</span>
-            <span class="switch-label switch-label-on">Admin</span>
-          </button>
-        </div>
       </div>
 
-      <div class="text-right text-white">
+      <!-- Mover switch aquí para que quede igual que en PublicView -->
+      <div class="text-right header-right flex items-center gap-4">
         <div class="text-sm">{{ fechaActual }}</div>
         <div class="text-lg font-semibold">{{ horaActual }}</div>
+
+        <button
+          class="view-switch"
+          :class="{ 'on': isAdmin.value }"
+          @click="toggle"
+          :aria-pressed="isAdmin.value"
+          :aria-label="isAdmin.value ? 'Ver como Admin' : 'Ver como Público'"
+          type="button"
+        >
+          <span class="switch-track" />
+          <span class="switch-thumb" />
+          <span class="switch-label switch-label-off">Público</span>
+          <span class="switch-label switch-label-on">Admin</span>
+        </button>
       </div>
     </header>
 
