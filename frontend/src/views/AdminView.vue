@@ -216,9 +216,9 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* Reusa estilos del switch (mismo diseño que PublicView) */
+/* SWITCH: mejoras para que las labels no se tapen y cambie color */
 .view-switch {
-  --w: 92px;
+  --w: 110px;      /* ancho más amplio para que "Público" quepa */
   --h: 36px;
   position: relative;
   width: var(--w);
@@ -234,6 +234,7 @@ onUnmounted(() => {
   overflow: visible;
 }
 
+/* track: z-index más bajo */
 .switch-track {
   position: absolute;
   inset: 0;
@@ -241,12 +242,15 @@ onUnmounted(() => {
   background: rgba(255,255,255,0.12);
   transition: background .18s ease, box-shadow .18s;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  z-index: 1;
 }
 
+/* track ON: color distinto (verde) */
 .view-switch.on .switch-track {
   background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
 }
 
+/* thumb: arriba del resto */
 .switch-thumb {
   --size: calc(var(--h) - 8px);
   position: absolute;
@@ -259,25 +263,39 @@ onUnmounted(() => {
   background: white;
   box-shadow: 0 6px 18px rgba(2,6,23,0.18);
   transition: transform .18s cubic-bezier(.2,.9,.3,1), left .18s;
+  z-index: 3;
 }
 
+/* mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
   left: calc(100% - var(--size) - 6px);
 }
 
+/* labels: z-index intermedio, tamaño y posición ajustados */
 .switch-label {
   position: absolute;
   font-weight: 600;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.95);
+  font-size: 0.85rem; /* un poco más chico para que quepa */
+  white-space: nowrap;
   pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease;
+  transition: opacity .15s ease, transform .15s ease, color .15s;
+  z-index: 2;
+  color: rgba(255,255,255,0.95);
 }
-.switch-label-off { left: 14px; opacity: 1; transform: translateX(0); }
-.switch-label-on { right: 14px; opacity: 0; transform: translateX(6px); }
-.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); }
-.view-switch.on .switch-label-on { opacity: 1; transform: translateX(0); }
 
+/* espacios para que no queden debajo del thumb */
+.switch-label-off { left: 18px; opacity: 1; transform: translateX(0); }
+.switch-label-on  { right: 18px; opacity: 0; transform: translateX(6px); }
+
+/* mostrar / ocultar según estado */
+.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); color: rgba(255,255,255,0.95); }
+.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); color: rgba(255,255,255,0.95); }
+
+/* hover sutil */
+.view-switch:hover .switch-thumb { transform: translateY(-52%); }
+.view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
+
+/* Card y botones (mantener estilos previos) */
 .card { background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06); padding: 2rem; }
 
 .button-primary { background: #3ec04a; color: white; padding: .75rem 1.5rem; border-radius:.5rem; border:none; font-weight:600; cursor:pointer; transition:background .2s; }
@@ -291,7 +309,4 @@ onUnmounted(() => {
 .status-badge-llamando { background:#ffa500; color:white; }
 .status-badge-atendido { background:#3ec04a; color:white; }
 .status-badge-perdido { background:#ef4444; color:white; }
-
-.view-switch:hover .switch-thumb { transform: translateY(-52%); }
-.view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
 </style>
