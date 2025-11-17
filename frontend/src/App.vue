@@ -1,12 +1,12 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-50">
-    <PublicView v-if="!isAdmin.value" />
-    <AdminView v-else />
+    <PublicView v-if="!isAdmin.value" key="public" />
+    <AdminView v-else key="admin" />
   </div>
 </template>
 
 <script setup>
-import { ref, provide, onMounted, onUnmounted } from 'vue';
+import { ref, provide, onMounted, onUnmounted, watch } from 'vue';
 import PublicView from './views/PublicView.vue';
 import AdminView from './views/AdminView.vue';
 
@@ -35,7 +35,10 @@ function setAdmin(value) {
   history.replaceState({}, '', window.location.pathname + (newSearch ? `?${newSearch}` : ''));
   isAdmin.value = !!value;
 }
-function toggleAdmin() { setAdmin(!isAdmin.value); }
+
+function toggleAdmin() { 
+  setAdmin(!isAdmin.value); 
+}
 
 // Proveer a las vistas para que puedan togglear sin recargar
 provide('isAdmin', isAdmin);
@@ -46,8 +49,19 @@ provide('toggleAdmin', toggleAdmin);
 function onPopState() {
   isAdmin.value = readIsAdminFromUrl();
 }
-onMounted(() => window.addEventListener('popstate', onPopState));
-onUnmounted(() => window.removeEventListener('popstate', onPopState));
+
+onMounted(() => {
+  window.addEventListener('popstate', onPopState);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('popstate', onPopState);
+});
+
+// Watch para asegurar que cualquier cambio en isAdmin se refleje
+watch(() => isAdmin.value, (newVal) => {
+  console.log('[App] isAdmin cambió a:', newVal);
+}, { immediate: true });
 </script>
 
 <style>
