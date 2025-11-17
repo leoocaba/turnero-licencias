@@ -11,8 +11,8 @@
 
         <button
           class="view-switch"
-          :class="{ 'on': isAdmin.value }"
-          @click="toggleAdmin"
+          :class="{ 'on': adminMode }"
+          @click="toggleMode"
           type="button"
         >
           <span class="switch-track" />
@@ -73,8 +73,8 @@ import api from "../services/api";
 import { showToast } from "../services/toast";
 
 const socket = inject("socket");
-const isAdmin = inject('isAdmin');
-const toggleAdmin = inject('toggleAdmin');
+const adminMode = inject('adminMode');
+const toggleMode = inject('toggleMode');
 
 const turnos = ref([]);
 const pulse = ref(false);

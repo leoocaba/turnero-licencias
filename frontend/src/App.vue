@@ -1,25 +1,23 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
-    <PublicView v-if="!isAdmin.value" />
+  <div id="app">
+    <PublicView v-if="!adminMode" />
     <AdminView v-else />
   </div>
 </template>
 
 <script setup>
-import { ref, provide, onMounted, onUnmounted, watch } from 'vue';
+import { ref, provide, onMounted } from 'vue';
 import PublicView from './views/PublicView.vue';
 import AdminView from './views/AdminView.vue';
 
-function readIsAdminFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const v = params.get('admin');
-  return v === '1';
+const adminMode = ref(false);
+
+function readAdminFromUrl() {
+  return new URLSearchParams(window.location.search).get('admin') === '1';
 }
 
-const isAdmin = ref(readIsAdminFromUrl());
-
-function setAdmin(value) {
-  isAdmin.value = value;
+function setAdminMode(value) {
+  adminMode.value = value;
   const params = new URLSearchParams(window.location.search);
   if (value) {
     params.set('admin', '1');
@@ -28,22 +26,21 @@ function setAdmin(value) {
   }
   const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
   window.history.replaceState({}, '', newUrl);
+  console.log('[App] adminMode es ahora:', adminMode.value);
 }
 
-function toggleAdmin() {
-  setAdmin(!isAdmin.value);
+function toggleMode() {
+  setAdminMode(!adminMode.value);
 }
 
-provide('isAdmin', isAdmin);
-provide('toggleAdmin', toggleAdmin);
-
-watch(() => isAdmin.value, (newVal) => {
-  console.log('[App] isAdmin changed to:', newVal);
-});
+provide('adminMode', adminMode);
+provide('setAdminMode', setAdminMode);
+provide('toggleMode', toggleMode);
 
 onMounted(() => {
+  adminMode.value = readAdminFromUrl();
   window.addEventListener('popstate', () => {
-    isAdmin.value = readIsAdminFromUrl();
+    adminMode.value = readAdminFromUrl();
   });
 });
 </script>
