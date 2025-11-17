@@ -7,20 +7,17 @@
       </div>
 
       <div class="header-center text-center flex-1">
-        <h1 class="text-white text-2xl font-bold mb-2">Turnero de Licencias</h1>
+        <h1 class="text-white text-2xl font-bold">Turnero de Licencias</h1>
       </div>
 
-      <!-- Mover switch aquí para que quede igual que en PublicView -->
-      <div class="text-right header-right flex items-center gap-4">
-        <div class="text-sm">{{ fechaActual }}</div>
-        <div class="text-lg font-semibold">{{ horaActual }}</div>
+      <div class="header-right flex items-center gap-4">
+        <div class="text-sm text-white">{{ fechaActual }}</div>
+        <div class="text-lg font-semibold text-white">{{ horaActual }}</div>
 
         <button
           class="view-switch"
           :class="{ 'on': isAdmin.value }"
-          @click="toggle"
-          :aria-pressed="isAdmin.value"
-          :aria-label="isAdmin.value ? 'Ver como Admin' : 'Ver como Público'"
+          @click="toggleAdmin"
           type="button"
         >
           <span class="switch-track" />
@@ -97,69 +94,44 @@ import api from "../services/api";
 import { showToast } from "../services/toast";
 
 const socket = inject("socket");
+const isAdmin = inject('isAdmin');
+const toggleAdmin = inject('toggleAdmin');
+
 const turnos = ref([]);
 const numero = ref("");
 const box = ref("");
 
-// inject SPA toggle helpers
-const isAdmin = inject('isAdmin');
-const toggleAdmin = inject('toggleAdmin');
+const fechaActual = computed(() => {
+  return new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+});
+const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
 
-// Crear una función local para el botón
-function toggle() {
-  console.log('[AdminView] toggle called, toggleAdmin=', toggleAdmin);
-  if (toggleAdmin) toggleAdmin();
-}
-
-// Cargar turnos iniciales
 async function cargarTurnos() {
   try {
     const res = await api.get("/turnos");
     turnos.value = res.data || [];
   } catch (err) {
     showToast("No se pudieron cargar los turnos", "error");
-    console.error(err);
   }
 }
 
-// Manejo de emisiones socket
 function socketHandler(payload) {
-  const data = payload || {};
-  const turno = data.turno || payload;
-  const action = data.action || (turno && turno._id ? "update" : "nuevo");
-  if (!turno) return;
+  const turno = payload.turno || payload;
+  if (!turno || !turno._id) return;
 
-  if (action === "nuevo") {
-    if (!turnos.value.find((x) => x._id === turno._id)) {
-      turnos.value.unshift(turno);
-    }
-  } else {
-    const idx = turnos.value.findIndex((x) => x._id === turno._id);
-    if (idx >= 0) turnos.value.splice(idx, 1, turno);
-    else turnos.value.unshift(turno);
-  }
+  const idx = turnos.value.findIndex(x => x._id === turno._id);
+  if (idx >= 0) turnos.value.splice(idx, 1, turno);
+  else turnos.value.unshift(turno);
 }
 
-onMounted(() => {
-  cargarTurnos();
-  if (socket) socket.on("turno_actualizado", socketHandler);
-  else showToast("Socket no conectado", "error");
-});
-
-onUnmounted(() => {
-  if (socket) socket.off("turno_actualizado", socketHandler);
-});
-
-// Crear / actualizar turnos
 async function crearTurno() {
   try {
     await api.post("/turnos", { numero: numero.value, box: parseInt(box.value, 10) });
     numero.value = "";
     box.value = "";
-    showToast("Turno creado. Se notificará a todas las pantallas.", "success");
+    showToast("Turno creado", "success");
   } catch (err) {
     showToast("Error al crear turno", "error");
-    console.error(err);
   }
 }
 
@@ -168,31 +140,27 @@ async function actualizarTurno(id, estado) {
     await api.put(`/turnos/${id}`, { estado });
     showToast("Cambio aplicado", "success");
   } catch (err) {
-    showToast("No se pudo actualizar el estado", "error");
-    console.error(err);
+    showToast("Error", "error");
   }
 }
 
-// UX helpers
 function estadoLabel(e) {
-  if (e === "llamando") return "Llamando";
-  if (e === "atendido") return "Atendido";
-  if (e === "perdido") return "Perdido";
-  return e || "Pendiente";
+  const labels = { llamando: 'Llamando', atendido: 'Atendido', perdido: 'Perdido' };
+  return labels[e] || 'Pendiente';
 }
 
-// Fecha y hora
-const fechaActual = computed(() => new Date().toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
-const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }));
-
-let _interval = null;
+let horaInterval = null;
 onMounted(() => {
-  _interval = setInterval(() => {
-    horaActual.value = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  cargarTurnos();
+  if (socket) socket.on("turno_actualizado", socketHandler);
+  horaInterval = setInterval(() => {
+    horaActual.value = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }, 60000);
 });
+
 onUnmounted(() => {
-  if (_interval) clearInterval(_interval);
+  if (socket) socket.off("turno_actualizado", socketHandler);
+  if (horaInterval) clearInterval(horaInterval);
 });
 </script>
 
@@ -209,94 +177,15 @@ onUnmounted(() => {
 
 .header-center {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
   flex: 1;
 }
 
-/* SWITCH LIMPIO Y FUNCIONAL */
-.view-switch {
-  --w: 120px;
-  --h: 38px;
-  --thumb-w: 28px;
-  position: relative;
-  width: var(--w);
-  height: var(--h);
-  border-radius: 999px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: inline-flex;
+.header-right {
+  display: flex;
   align-items: center;
-  overflow: visible;
-}
-
-.switch-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.15);
-  transition: background 0.2s ease;
-  z-index: 0;
-}
-
-.view-switch.on .switch-track {
-  background: #3ec04a;
-}
-
-.switch-thumb {
-  position: absolute;
-  left: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: var(--thumb-w);
-  height: var(--thumb-w);
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 2;
-}
-
-.view-switch.on .switch-thumb {
-  left: calc(100% - var(--thumb-w) - 5px);
-}
-
-.switch-label {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: white;
-  z-index: 1;
-  white-space: nowrap;
-  transition: opacity 0.2s ease;
-}
-
-.switch-label-off {
-  left: 40px;
-  opacity: 1;
-}
-
-.switch-label-on {
-  right: 40px;
-  opacity: 0;
-}
-
-.view-switch.on .switch-label-off {
-  opacity: 0;
-}
-
-.view-switch.on .switch-label-on {
-  opacity: 1;
-}
-
-.view-switch:hover .switch-thumb {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  gap: 1rem;
 }
 
 .card {
@@ -317,14 +206,8 @@ onUnmounted(() => {
   transition: background 0.2s ease;
 }
 
-.button-primary:hover {
-  background: #34a03a;
-}
-
-.button-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.button-primary:hover { background: #34a03a; }
+.button-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .button-secondary {
   background: #002b5c;
@@ -337,34 +220,101 @@ onUnmounted(() => {
   transition: background 0.2s ease;
 }
 
-.button-secondary:hover {
-  background: #001a38;
-}
-
-.button-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.button-secondary:hover { background: #001a38; }
+.button-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .status-badge {
-  padding: 0.35rem 1rem;
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
   border-radius: 9999px;
   font-weight: 600;
   font-size: 0.875rem;
 }
 
-.status-badge-llamando {
-  background: #ffa500;
-  color: white;
+.status-badge-llamando { background: #ffa500; color: white; }
+.status-badge-atendido { background: #3ec04a; color: white; }
+.status-badge-perdido { background: #ef4444; color: white; }
+
+/* SWITCH (idéntico a PublicView) */
+.view-switch {
+  --w: 110px;
+  --h: 36px;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 999px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.status-badge-atendido {
+.switch-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.3s ease;
+  z-index: 1;
+}
+
+.view-switch.on .switch-track {
   background: #3ec04a;
-  color: white;
 }
 
-.status-badge-perdido {
-  background: #ef4444;
+.switch-thumb {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+}
+
+.view-switch.on .switch-thumb {
+  left: calc(100% - 31px);
+}
+
+.switch-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+  font-size: 0.8rem;
   color: white;
+  z-index: 3;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.switch-label-off {
+  left: 36px;
+  opacity: 1;
+}
+
+.switch-label-on {
+  right: 36px;
+  opacity: 0;
+}
+
+.view-switch.on .switch-label-off {
+  opacity: 0;
+}
+
+.view-switch.on .switch-label-on {
+  opacity: 1;
+}
+
+.view-switch:hover .switch-thumb {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 </style>

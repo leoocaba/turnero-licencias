@@ -1,22 +1,18 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header con logo y fecha (switch a la derecha) -->
     <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
       </div>
 
-      <div class="text-right header-right flex items-center gap-4">
-        <div class="text-sm capitalize">{{ fechaActual }}</div>
-        <div class="text-lg font-bold">{{ horaActual }}</div>
+      <div class="header-right flex items-center gap-4">
+        <div class="text-sm capitalize text-white">{{ fechaActual }}</div>
+        <div class="text-lg font-bold text-white">{{ horaActual }}</div>
 
-        <!-- Switch actualizado -->
         <button
           class="view-switch"
           :class="{ 'on': isAdmin.value }"
-          @click="toggle"
-          :aria-pressed="isAdmin.value"
-          :aria-label="isAdmin.value ? 'Ver como Admin' : 'Ver como Público'"
+          @click="toggleAdmin"
           type="button"
         >
           <span class="switch-track" />
@@ -28,28 +24,21 @@
     </header>
 
     <main class="flex-1 container mx-auto px-4 py-8">
-      <!-- Turno Actual -->
       <div class="max-w-4xl mx-auto mb-12">
         <div class="card text-center">
           <h2 class="text-2xl text-berisso-blue mb-4">Turno Actual</h2>
           <div v-if="turnoActivo" class="space-y-4">
             <div :class="['big-number', { 'pulse-number': pulse }]">{{ turnoActivo.numero }}</div>
             <div class="text-box font-bold text-berisso-blue">Box {{ turnoActivo.box }}</div>
-            <div class="flex justify-center gap-4 items-center">
-              <span :class="['status-badge', estadoBadgeClass(turnoActivo.estado)]">
-                {{ estadoLabel(turnoActivo.estado) }}
-              </span>
-            </div>
+            <span :class="['status-badge', `status-badge-${turnoActivo.estado}`]">
+              {{ estadoLabel(turnoActivo.estado) }}
+            </span>
           </div>
-          <div v-else class="text-xl text-gray-500">
-            No hay turnos activos en este momento
-          </div>
+          <div v-else class="text-xl text-gray-500">No hay turnos activos</div>
         </div>
       </div>
 
-      <!-- Grilla de estados -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Últimos atendidos -->
         <div class="card">
           <h3 class="text-xl font-semibold mb-4">Últimos Atendidos</h3>
           <div class="space-y-3">
@@ -58,11 +47,10 @@
               <span class="text-xl font-bold">{{ turno.numero }}</span>
               <span class="text-berisso-green font-medium">Box {{ turno.box }}</span>
             </div>
-            <div v-if="ultimosAtendidos.length === 0" class="text-sm text-gray-500">No hay atendidos recientes.</div>
+            <div v-if="ultimosAtendidos.length === 0" class="text-sm text-gray-500">Sin datos recientes</div>
           </div>
         </div>
 
-        <!-- Turnos perdidos -->
         <div class="card">
           <h3 class="text-xl font-semibold mb-4">Turnos Perdidos</h3>
           <div class="space-y-3">
@@ -71,7 +59,7 @@
               <span class="text-xl font-bold">{{ turno.numero }}</span>
               <span class="text-red-500 font-medium">Box {{ turno.box }}</span>
             </div>
-            <div v-if="ultimosPerdidos.length === 0" class="text-sm text-gray-500">No hay perdidos recientes.</div>
+            <div v-if="ultimosPerdidos.length === 0" class="text-sm text-gray-500">Sin datos recientes</div>
           </div>
         </div>
       </div>
@@ -88,18 +76,12 @@ const socket = inject("socket");
 const isAdmin = inject('isAdmin');
 const toggleAdmin = inject('toggleAdmin');
 
-function toggle() {
-  if (toggleAdmin) toggleAdmin();
-}
-
 const turnos = ref([]);
 const pulse = ref(false);
 
-// Computed properties
 const turnoActivo = computed(() => {
   const llamando = turnos.value.find(t => t.estado === "llamando");
-  if (llamando) return llamando;
-  return turnos.value[0] || null;
+  return llamando || turnos.value[0] || null;
 });
 
 const ultimosAtendidos = computed(() =>
@@ -110,14 +92,6 @@ const ultimosPerdidos = computed(() =>
   turnos.value.filter(t => t.estado === "perdido").slice(0, 5)
 );
 
-// Watch para la animación de pulso
-watch(() => turnoActivo.value, (newVal) => {
-  if (!newVal) return;
-  pulse.value = true;
-  setTimeout(() => (pulse.value = false), 420);
-});
-
-// Fecha y hora
 const fechaActual = computed(() => {
   return new Date().toLocaleDateString('es-AR', {
     weekday: 'long',
@@ -126,46 +100,41 @@ const fechaActual = computed(() => {
     day: 'numeric'
   });
 });
+
 const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
 
-// Funciones
+watch(() => turnoActivo.value, () => {
+  pulse.value = true;
+  setTimeout(() => (pulse.value = false), 420);
+});
+
 async function cargarTurnos() {
   try {
     const res = await api.get("/turnos");
     turnos.value = res.data || [];
   } catch (err) {
-    showToast("No se pudieron cargar los turnos", "error");
     console.error(err);
   }
 }
 
 function socketHandler(payload) {
-  const data = payload || {};
-  const turno = data.turno || payload;
-  const action = data.action || (turno && turno._id ? "update" : "nuevo");
-  if (!turno) return;
+  const turno = payload.turno || payload;
+  if (!turno || !turno._id) return;
 
-  if (action === "nuevo") {
-    if (!turnos.value.find((x) => x._id === turno._id)) {
-      turnos.value.unshift(turno);
-    }
-  } else {
-    const idx = turnos.value.findIndex((x) => x._id === turno._id);
-    if (idx >= 0) turnos.value.splice(idx, 1, turno);
-    else turnos.value.unshift(turno);
-  }
+  const idx = turnos.value.findIndex(x => x._id === turno._id);
+  if (idx >= 0) turnos.value.splice(idx, 1, turno);
+  else turnos.value.unshift(turno);
+}
+
+function estadoLabel(e) {
+  const labels = { llamando: 'Llamando', atendido: 'Atendido', perdido: 'Perdido' };
+  return labels[e] || 'Pendiente';
 }
 
 let horaInterval = null;
 onMounted(() => {
   cargarTurnos();
-
-  if (socket) {
-    socket.on("turno_actualizado", socketHandler);
-  } else {
-    showToast("Conexión en tiempo real no disponible", "error");
-  }
-
+  if (socket) socket.on("turno_actualizado", socketHandler);
   horaInterval = setInterval(() => {
     horaActual.value = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }, 60000);
@@ -175,21 +144,6 @@ onUnmounted(() => {
   if (socket) socket.off("turno_actualizado", socketHandler);
   if (horaInterval) clearInterval(horaInterval);
 });
-
-// Helpers
-function estadoLabel(e) {
-  if (e === "llamando") return "Llamando";
-  if (e === "atendido") return "Atendido";
-  if (e === "perdido") return "Perdido";
-  return e || "Pendiente";
-}
-
-function estadoBadgeClass(e) {
-  if (e === "llamando") return "status-badge-llamando";
-  if (e === "atendido") return "status-badge-atendido";
-  if (e === "perdido") return "status-badge-perdido";
-  return "status-badge-default";
-}
 </script>
 
 <style scoped>
@@ -202,10 +156,54 @@ function estadoBadgeClass(e) {
   align-items: center;
 }
 
-/* SWITCH mejorado: labels fuera de la trayectoria del thumb, visibles y con color */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  padding: 2rem;
+}
+
+.big-number {
+  font-size: 4.5rem;
+  font-weight: 800;
+  color: #002b5c;
+}
+
+@media (min-width: 768px) {
+  .big-number { font-size: 6rem; }
+}
+
+.pulse-number {
+  animation: pulse 420ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.status-badge-llamando { background: #ffa500; color: white; }
+.status-badge-atendido { background: #3ec04a; color: white; }
+.status-badge-perdido { background: #ef4444; color: white; }
+
+/* SWITCH */
 .view-switch {
-  --w: 120px;
-  --h: 38px;
+  --w: 110px;
+  --h: 36px;
   position: relative;
   width: var(--w);
   height: var(--h);
@@ -217,98 +215,71 @@ function estadoBadgeClass(e) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
 }
 
-/* track (detrás) */
 .switch-track {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  transition: background .18s ease, box-shadow .18s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.3s ease;
   z-index: 1;
 }
 
-/* track ON color */
 .view-switch.on .switch-track {
-  background: linear-gradient(90deg, rgba(62,192,74,0.95), rgba(6,128,75,0.95));
+  background: #3ec04a;
 }
 
-/* thumb (por debajo de las labels para que éstas siempre queden visibles) */
 .switch-thumb {
-  --size: calc(var(--h) - 10px);
   position: absolute;
-  left: 8px;
+  left: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: var(--size);
-  height: var(--size);
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 6px 18px rgba(2,6,23,0.18);
-  transition: left .18s cubic-bezier(.2,.9,.3,1), transform .12s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 2;
 }
 
-/* mover thumb cuando está ON */
 .view-switch.on .switch-thumb {
-  left: calc(100% - var(--size) - 8px);
+  left: calc(100% - 31px);
 }
 
-/* labels: colocadas fuera del recorrido del thumb y siempre por encima (z-index) */
 .switch-label {
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   font-weight: 600;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease, color .15s;
+  font-size: 0.8rem;
+  color: white;
   z-index: 3;
-  color: rgba(255,255,255,0.95);
-  max-width: calc(var(--w) - var(--size) - 30px);
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
-/* separaciones para que no queden debajo del thumb */
-.switch-label-off { left: calc(var(--size) + 12px); opacity: 1; transform: translateX(0); }
-.switch-label-on  { right: calc(var(--size) + 12px); opacity: 0; transform: translateX(6px); }
-
-/* mostrar/ocultar según estado */
-.view-switch.on .switch-label-off { opacity: 0; transform: translateX(-6px); color: rgba(255,255,255,0.85); }
-.view-switch.on .switch-label-on  { opacity: 1; transform: translateX(0); color: #fff; }
-
-/* colores según estado (mejor contraste) */
-.view-switch:not(.on) .switch-label-off { color: #ffffff; }
-.view-switch:not(.on) .switch-label-on  { color: rgba(255,255,255,0.6); }
-
-/* hover sutil */
-.view-switch:hover .switch-thumb { transform: translateY(-52%); }
-.view-switch:hover .switch-track { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.06); }
-
-/* responsive: reducir tamaño en móviles */
-@media (max-width: 420px) {
-  .view-switch { --w: 100px; --h: 34px; }
-  .switch-label { font-size: 0.78rem; max-width: calc(var(--w) - var(--size) - 26px); }
+.switch-label-off {
+  left: 36px;
+  opacity: 1;
 }
 
-/* Card y resto de estilos (mantener como estaban) */
-.card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
-  padding: 2rem;
+.switch-label-on {
+  right: 36px;
+  opacity: 0;
 }
 
-.big-number { font-size: 4.5rem; font-weight: 800; color: #002b5c; }
-@media (min-width: 768px) { .big-number { font-size: 6rem; } }
-.pulse-number { animation: pulse 420ms cubic-bezier(0.4,0,0.6,1); }
-@keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.05);} }
+.view-switch.on .switch-label-off {
+  opacity: 0;
+}
 
-.status-badge { padding:.35rem 1rem; border-radius:9999px; font-weight:600; font-size:.875rem; }
-.status-badge-llamando { background:#ffa500; color:white; }
-.status-badge-atendido { background:#3ec04a; color:white; }
-.status-badge-perdido { background:#ef4444; color:white; }
+.view-switch.on .switch-label-on {
+  opacity: 1;
+}
+
+.view-switch:hover .switch-thumb {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
 </style>
