@@ -17,6 +17,7 @@
             @click="toggle"
             :aria-pressed="isAdmin.value"
             aria-label="Alternar vista admin / pública"
+            type="button"
           >
             <span class="switch-track" />
             <span class="switch-thumb" />
@@ -31,7 +32,7 @@
     </header>
 
     <main class="flex-1 p-6">
-      <!-- Panel de control (sin cambios) -->
+      <!-- Panel de control -->
       <div class="card mb-8">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
@@ -105,7 +106,10 @@ const isAdmin = inject('isAdmin');
 const toggleAdmin = inject('toggleAdmin');
 
 // Crear una función local para el botón
-function toggle() { toggleAdmin && toggleAdmin(); }
+function toggle() {
+  console.log('[AdminView] toggle called, toggleAdmin=', toggleAdmin);
+  if (toggleAdmin) toggleAdmin();
+}
 
 // Cargar turnos iniciales
 async function cargarTurnos() {
@@ -146,7 +150,7 @@ onUnmounted(() => {
   if (socket) socket.off("turno_actualizado", socketHandler);
 });
 
-// Crear / actualizar turnos (sin cambios)
+// Crear / actualizar turnos
 async function crearTurno() {
   try {
     await api.post("/turnos", { numero: numero.value, box: parseInt(box.value, 10) });
@@ -193,74 +197,79 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ajustes puntuales para la vista admin */
-.cards-enter-active, .cards-leave-active { transition: all .25s ease; }
-.cards-enter-from { opacity: 0; transform: translateY(6px); }
-.cards-enter-to { opacity: 1; transform: translateY(0); }
-
 .header-container {
-  background: #002b5c; /* azul Berisso */
-  min-height: 72px;
+  background: #002b5c;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  min-height: 72px;
 }
+
 .header-center {
-  /* fuerza centrado del contenido (titulo + botones) */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
+  flex: 1;
 }
-@media (min-width: 1024px) {
-  .header-center { padding-left: 2rem; padding-right: 2rem; }
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  padding: 2rem;
 }
 
 .button-primary {
-  background-color: #3b82f6;
+  background: #3ec04a;
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: background-color 0.3s;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.button-primary:hover {
-  background-color: #2563eb;
-}
+.button-primary:hover { background: #34a03a; }
+.button-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .button-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: background-color 0.3s;
+  background: #002b5c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.button-secondary:hover {
-  background-color: #d1d5db;
-}
+.button-secondary:hover { background: #001a38; }
+.button-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .status-badge {
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 1rem;
   border-radius: 9999px;
+  font-weight: 600;
   font-size: 0.875rem;
-  font-weight: 500;
-  text-transform: uppercase;
 }
 
 .status-badge-llamando {
-  background-color: #3b82f6;
+  background: #ffa500;
   color: white;
 }
 
 .status-badge-atendido {
-  background-color: #4caf50;
+  background: #3ec04a;
   color: white;
 }
 
 .status-badge-perdido {
-  background-color: #f44336;
+  background: #ef4444;
   color: white;
 }
 
@@ -276,17 +285,19 @@ onUnmounted(() => {
   background: transparent;
   cursor: pointer;
   display: inline-block;
-  transition: transform .12s ease;
+  transition: transform 0.12s ease;
 }
+
 .view-switch .switch-track {
   display: block;
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: rgba(255,255,255,0.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-  transition: background .2s ease;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: background 0.2s ease;
 }
+
 .view-switch .switch-thumb {
   position: absolute;
   top: 3px;
@@ -295,12 +306,20 @@ onUnmounted(() => {
   height: calc(var(--h) - 6px);
   border-radius: 50%;
   background: white;
-  box-shadow: 0 4px 10px rgba(2,6,23,0.2);
-  transition: left .18s cubic-bezier(.2,.9,.3,1), background .18s;
+  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.2);
+  transition: left 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.18s;
 }
-.view-switch.on .switch-track { background: rgba(62,192,74,0.95); }
-.view-switch.on .switch-thumb { left: calc(100% - (var(--h) - 3px)); background: white; }
 
-/* pequeño hover */
-.view-switch:hover { transform: translateY(-1px); }
+.view-switch.on .switch-track {
+  background: rgba(62, 192, 74, 0.95);
+}
+
+.view-switch.on .switch-thumb {
+  left: calc(100% - (var(--h) - 3px));
+  background: white;
+}
+
+.view-switch:hover {
+  transform: translateY(-1px);
+}
 </style>

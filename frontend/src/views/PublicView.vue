@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header con logo y fecha (ahora con switch a la derecha) -->
+    <!-- Header con logo y fecha (switch a la derecha) -->
     <header class="header-container flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="../assets/logo-berisso.svg" alt="Municipalidad de Berisso" class="h-16" />
@@ -10,13 +10,14 @@
         <div class="text-sm capitalize">{{ fechaActual }}</div>
         <div class="text-lg font-bold">{{ horaActual }}</div>
 
-        <!-- Switch elegante sutil (usa toggle sin reload) -->
+        <!-- Switch elegante sutil -->
         <button
           class="view-switch"
           :class="{ 'on': isAdmin.value }"
           @click="toggle"
           :aria-pressed="isAdmin.value"
           aria-label="Alternar vista admin / pública"
+          type="button"
         >
           <span class="switch-track" />
           <span class="switch-thumb" />
@@ -84,7 +85,11 @@ import { showToast } from "../services/toast";
 const socket = inject("socket");
 const isAdmin = inject('isAdmin');
 const toggleAdmin = inject('toggleAdmin');
-function toggle() { toggleAdmin && toggleAdmin(); }
+
+function toggle() {
+  console.log('[PublicView] toggle called, toggleAdmin=', toggleAdmin);
+  if (toggleAdmin) toggleAdmin();
+}
 
 const turnos = ref([]);
 const pulse = ref(false);
@@ -104,14 +109,14 @@ const ultimosPerdidos = computed(() =>
   turnos.value.filter(t => t.estado === "perdido").slice(0, 5)
 );
 
-// Watch para la animación de pulso (corregido)
+// Watch para la animación de pulso
 watch(() => turnoActivo.value, (newVal) => {
   if (!newVal) return;
   pulse.value = true;
   setTimeout(() => (pulse.value = false), 420);
 });
 
-// Fecha y hora (fecha puede ser computed, hora es ref para actualizar)
+// Fecha y hora
 const fechaActual = computed(() => {
   return new Date().toLocaleDateString('es-AR', {
     weekday: 'long',
@@ -122,7 +127,7 @@ const fechaActual = computed(() => {
 });
 const horaActual = ref(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
 
-// Funciones de carga y manejo de datos
+// Funciones
 async function cargarTurnos() {
   try {
     const res = await api.get("/turnos");
@@ -150,7 +155,6 @@ function socketHandler(payload) {
   }
 }
 
-// Lifecycle hooks
 let horaInterval = null;
 onMounted(() => {
   cargarTurnos();
@@ -171,7 +175,7 @@ onUnmounted(() => {
   if (horaInterval) clearInterval(horaInterval);
 });
 
-// Helpers de UI
+// Helpers
 function estadoLabel(e) {
   if (e === "llamando") return "Llamando";
   if (e === "atendido") return "Atendido";
@@ -185,37 +189,35 @@ function estadoBadgeClass(e) {
   if (e === "perdido") return "status-badge-perdido";
   return "status-badge-default";
 }
-
-function formatoFecha(ts) {
-  if (!ts) return "-";
-  try {
-    const d = new Date(ts);
-    return d.toLocaleString();
-  } catch { 
-    return "-"; 
-  }
-}
 </script>
 
 <style scoped>
-/* Ajustes para la tarjeta principal */
-.card { 
-  max-width: 900px;
-  @apply bg-white rounded-xl shadow-lg p-8;
+.header-container {
+  background: #002b5c;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.big-number { 
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  padding: 2rem;
+}
+
+.big-number {
   font-size: 4.5rem;
-  @apply font-bold text-berisso-blue;
+  font-weight: 800;
+  color: #002b5c;
 }
 
 @media (min-width: 768px) {
-  .big-number {
-    font-size: 6rem;
-  }
+  .big-number { font-size: 6rem; }
 }
 
-/* Animación de pulso */
 .pulse-number {
   animation: pulse 420ms cubic-bezier(0.4, 0, 0.6, 1);
 }
@@ -225,29 +227,29 @@ function formatoFecha(ts) {
   50% { transform: scale(1.05); }
 }
 
-/* Estilos de estado */
 .status-badge {
-  @apply px-4 py-2 rounded-full font-medium;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
-.status-badge-llamando { 
-  @apply bg-amber-500 text-white;
+.status-badge-llamando {
+  background: #ffa500;
+  color: white;
 }
 
-.status-badge-atendido { 
-  @apply bg-emerald-500 text-white;
+.status-badge-atendido {
+  background: #3ec04a;
+  color: white;
 }
 
-.status-badge-perdido { 
-  @apply bg-red-500 text-white;
+.status-badge-perdido {
+  background: #ef4444;
+  color: white;
 }
 
-/* Header */
-.header-container {
-  @apply bg-berisso-blue text-white px-8 py-4 flex justify-between items-center;
-}
-
-/* Reusa estilos del switch definidos en AdminView (si están scope distintos, los repetimos) */
+/* Switch styles */
 .view-switch {
   --w: 48px;
   --h: 26px;
@@ -259,17 +261,19 @@ function formatoFecha(ts) {
   background: transparent;
   cursor: pointer;
   display: inline-block;
-  transition: transform .12s ease;
+  transition: transform 0.12s ease;
 }
+
 .view-switch .switch-track {
   display: block;
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: rgba(255,255,255,0.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-  transition: background .2s ease;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: background 0.2s ease;
 }
+
 .view-switch .switch-thumb {
   position: absolute;
   top: 3px;
@@ -278,11 +282,20 @@ function formatoFecha(ts) {
   height: calc(var(--h) - 6px);
   border-radius: 50%;
   background: white;
-  box-shadow: 0 4px 10px rgba(2,6,23,0.2);
-  transition: left .18s cubic-bezier(.2,.9,.3,1), background .18s;
+  box-shadow: 0 4px 10px rgba(2, 6, 23, 0.2);
+  transition: left 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.18s;
 }
-.view-switch.on .switch-track { background: rgba(62,192,74,0.95); }
-.view-switch.on .switch-thumb { left: calc(100% - (var(--h) - 3px)); background: white; }
 
-.view-switch:hover { transform: translateY(-1px); }
+.view-switch.on .switch-track {
+  background: rgba(62, 192, 74, 0.95);
+}
+
+.view-switch.on .switch-thumb {
+  left: calc(100% - (var(--h) - 3px));
+  background: white;
+}
+
+.view-switch:hover {
+  transform: translateY(-1px);
+}
 </style>
