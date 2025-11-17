@@ -1,7 +1,9 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-50">
-    <PublicView v-if="!isAdmin.value" />
-    <AdminView v-else />
+    <KeepAlive>
+      <PublicView v-if="!isAdmin.value" :key="'public-' + isAdmin.value" />
+      <AdminView v-else :key="'admin-' + isAdmin.value" />
+    </KeepAlive>
   </div>
 </template>
 
@@ -10,7 +12,6 @@ import { ref, provide, onMounted, onUnmounted } from 'vue';
 import PublicView from './views/PublicView.vue';
 import AdminView from './views/AdminView.vue';
 
-// Lee el query param inicial
 function readIsAdminFromUrl() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -23,7 +24,6 @@ function readIsAdminFromUrl() {
 
 const isAdmin = ref(readIsAdminFromUrl());
 
-// Cambia el param en la URL y actualiza el ref sin reload
 function setAdmin(value) {
   const params = new URLSearchParams(window.location.search);
   if (value) params.set('admin', '1');
@@ -34,18 +34,18 @@ function setAdmin(value) {
   const newSearch = params.toString();
   history.replaceState({}, '', window.location.pathname + (newSearch ? `?${newSearch}` : ''));
   isAdmin.value = !!value;
+  console.log('[App] setAdmin -> isAdmin.value es ahora:', isAdmin.value);
 }
 
 function toggleAdmin() { 
+  console.log('[App] toggleAdmin llamado');
   setAdmin(!isAdmin.value); 
 }
 
-// Proveer a las vistas para que puedan togglear sin recargar
 provide('isAdmin', isAdmin);
 provide('setAdmin', setAdmin);
 provide('toggleAdmin', toggleAdmin);
 
-// Escuchar cambios del historial (botones atrás/adelante)
 function onPopState() {
   isAdmin.value = readIsAdminFromUrl();
 }
