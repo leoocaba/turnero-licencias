@@ -1,12 +1,12 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-50">
-    <PublicView v-if="!isAdmin.value" key="public" />
-    <AdminView v-else key="admin" />
+    <!-- Fuerza re-render con :key basado en isAdmin.value -->
+    <component :is="currentView" :key="isAdmin.value" />
   </div>
 </template>
 
 <script setup>
-import { ref, provide, onMounted, onUnmounted, watch } from 'vue';
+import { ref, provide, computed, onMounted, onUnmounted, watch } from 'vue';
 import PublicView from './views/PublicView.vue';
 import AdminView from './views/AdminView.vue';
 
@@ -23,6 +23,9 @@ function readIsAdminFromUrl() {
 
 const isAdmin = ref(readIsAdminFromUrl());
 
+// Computed que retorna el componente correcto basado en isAdmin.value
+const currentView = computed(() => isAdmin.value ? AdminView : PublicView);
+
 // Cambia el param en la URL y actualiza el ref sin reload
 function setAdmin(value) {
   const params = new URLSearchParams(window.location.search);
@@ -34,6 +37,7 @@ function setAdmin(value) {
   const newSearch = params.toString();
   history.replaceState({}, '', window.location.pathname + (newSearch ? `?${newSearch}` : ''));
   isAdmin.value = !!value;
+  console.log('[App] setAdmin -> isAdmin.value =', isAdmin.value);
 }
 
 function toggleAdmin() { 
@@ -58,10 +62,10 @@ onUnmounted(() => {
   window.removeEventListener('popstate', onPopState);
 });
 
-// Watch para asegurar que cualquier cambio en isAdmin se refleje
+// Watch para debug
 watch(() => isAdmin.value, (newVal) => {
   console.log('[App] isAdmin cambió a:', newVal);
-}, { immediate: true });
+});
 </script>
 
 <style>
